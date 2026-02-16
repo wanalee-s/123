@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+    themes: all;
+}
+@plugin "daisyui/theme" {
+    name: "roomsync";
+    default: true;
+
+    --p: 43 90% 65%;       /* primary */
+    --b1: 35 60% 94%;      /* base-100 */
+    --b2: 35 50% 90%;
+}
