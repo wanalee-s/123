@@ -4,9 +4,10 @@ import Calendar from '../components/Calendar.vue';
 import UserStatus from "../components/UserStatus.vue";
 
 const routes = [
-  { path: '/', name: 'Dashboard', component: Dashboard },
+  // { path: '/', name: 'Dashboard', component: Dashboard },
   { path: '/calendar', name: 'Calendar', component: Calendar },
   { path: "/myResevation", name: "UserStatus", component: UserStatus },
+  { path: '/', name: 'Login', component: () => import('../views/Login.vue') },
 ];
 
 const router = createRouter({
