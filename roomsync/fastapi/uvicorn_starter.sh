@@ -24,8 +24,12 @@ if [ "$APP_ENV" = "development" ]; then
     fi
 
     echo "Running database migrations..."
-    python3 -m alembic upgrade head  # Run Alembic migrations
-    echo "Migrations applied"
+    if [ -f "alembic.ini" ]; then
+        python3 -m alembic upgrade head  # Run Alembic migrations
+        echo "Migrations applied"
+    else
+        echo "Warning: alembic.ini not found, skipping migrations"
+    fi
 
     if [ "$DEBUG" = "1" ]; then
         echo "Running FastAPI in Development Mode (with auto-reload)"

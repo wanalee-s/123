@@ -1,12 +1,18 @@
 import json
 import logging
 import os
+from pathlib import Path
 from pydantic import validator
 from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
 from typing import List, Optional, Any, Callable, Union
 from dotenv import load_dotenv
 
-load_dotenv()
+ENV_PATH = next(
+    (parent / ".env" for parent in Path(__file__).resolve().parents if (parent / ".env").exists()),
+    None,
+)
+if ENV_PATH:
+    load_dotenv(ENV_PATH, override=True)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,7 +29,7 @@ class CustomEnvSettingsSource(EnvSettingsSource):
         for field_name, field in self.settings_cls.model_fields.items():
             env_key = f"{self.env_prefix}{field_name.upper()}"
             env_val = env_vars.get(env_key)
-            if env_val is not None:
+            if env_val is not None and env_val != "":
                 # Pass raw string without parsing
                 out[field_name] = env_val
         return out
@@ -68,6 +74,7 @@ class Settings(BaseSettings):
     google_client_secret: Optional[str] = None
     google_discovery_url: Optional[str] = None
     frontend_login_success_uri: str = "http://localhost:8080/login-success"  # Default
+    frontend_login_failure_uri: str = "http://localhost:8080/login-failed"  # Default
 
     @validator("allowed_origins", pre=True, always=True)
     def assemble_allowed_origins(cls, v):
@@ -96,7 +103,7 @@ class Settings(BaseSettings):
         return ["*"]
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(ENV_PATH) if ENV_PATH else None,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -119,6 +126,8 @@ try:
     logging.info(f"Settings loaded successfully")
     logging.info(f"Final allowed_origins: {settings.allowed_origins}")
     logging.info(f"Database URL: {settings.database_url}")
+    logging.info(f"Google Client ID: {settings.google_client_id}")
+    logging.info(f"Google Client Secret: {settings.google_client_secret[:10] if settings.google_client_secret else 'NOT SET'}...")
 except Exception as e:
     logging.error(f"Error loading settings: {e}")
     raise

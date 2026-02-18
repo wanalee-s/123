@@ -3,6 +3,7 @@
 
 import logging
 import secrets
+from urllib import request
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -25,13 +26,18 @@ SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 1 day (1440 minutes)
 
-# Google OAuth Configuration
-GOOGLE_CLIENT_ID = settings.google_client_id or "your-google-client-id"
-GOOGLE_CLIENT_SECRET = settings.google_client_secret or "your-google-client-secret"
 GOOGLE_REDIRECT_URI = "http://localhost:8080/auth/google/auth"  # Adjust as needed
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
+
+
+def get_google_oauth_config() -> tuple[str, str]:
+    client_id = settings.google_client_id
+    client_secret = settings.google_client_secret
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+    return client_id, client_secret
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -80,6 +86,18 @@ async def hello():
     return {"message": "From auth.py: Hello World!"}
 
 
+@router.get("/debug")
+async def debug():
+    """Debug endpoint to check if credentials are loaded"""
+    client_id = settings.google_client_id
+    client_secret = settings.google_client_secret
+    return {
+        "google_client_id": client_id,
+        "google_client_secret": client_secret[:10] + "***" if client_secret else None,
+        "redirect_uri_template": "Will be generated at login"
+    }
+
+
 @router.get("/login", response_description="Redirects to Google OAuth")
 async def login(request: Request):
     """
@@ -89,14 +107,15 @@ async def login(request: Request):
     and redirects the user to Google's consent page.
     """
     # ... implementation details ...
+    client_id, _ = get_google_oauth_config()
     redirect_uri = str(request.url_for("google_auth"))
     auth_url = (
-        f"{GOOGLE_AUTH_URL}?response_type=code&client_id={GOOGLE_CLIENT_ID}"
+        f"{GOOGLE_AUTH_URL}?response_type=code&client_id={client_id}"
         f"&redirect_uri={redirect_uri}&scope=openid%20email%20profile"
     )
     logger.info("Redirecting to Google OAuth")
     return RedirectResponse(url=auth_url)
-
+    
 
 @router.get("/google/auth", name="google_auth", response_description="Redirects to Frontend with JWT")
 async def google_auth(request: Request, db: Session = Depends(get_db)):
@@ -112,6 +131,7 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
     """
     # ... implementation details ...
     try:
+        client_id, client_secret = get_google_oauth_config()
         code = request.query_params.get("code")
     # ... rest of the function ...
         # (This is a large block, I will strictly follow replacement rules in next step, 
@@ -124,8 +144,8 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
                 GOOGLE_TOKEN_URL,
                 data={
                     "code": code,
-                    "client_id": GOOGLE_CLIENT_ID,
-                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
                     "redirect_uri": str(request.url_for("google_auth")),
                     "grant_type": "authorization_code",
                 },
