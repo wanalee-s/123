@@ -30,6 +30,10 @@ GOOGLE_REDIRECT_URI = "http://localhost:8080/auth/google/auth"  # Adjust as need
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
+GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
+GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
+GITHUB_USER_URL = "https://api.github.com/user"
+GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 
 
 def get_google_oauth_config() -> tuple[str, str]:
@@ -38,6 +42,36 @@ def get_google_oauth_config() -> tuple[str, str]:
     if not client_id or not client_secret:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
     return client_id, client_secret
+
+
+def get_github_oauth_config() -> tuple[str, str]:
+    client_id = settings.github_client_id
+    client_secret = settings.github_client_secret
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="GitHub OAuth is not configured")
+    return client_id, client_secret
+
+
+async def fetch_github_profile(access_token: str) -> dict:
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with AsyncClient() as client:
+        user_response = await client.get(GITHUB_USER_URL, headers=headers)
+        user_data = user_response.json()
+        email = user_data.get("email")
+        if not email:
+            emails_response = await client.get(GITHUB_EMAILS_URL, headers=headers)
+            emails = emails_response.json()
+            primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+            email = primary.get("email") if primary else None
+        return {
+            "email": email,
+            "name": user_data.get("name") or user_data.get("login"),
+            "avatar_url": user_data.get("avatar_url"),
+            "login": user_data.get("login"),
+        }
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -91,9 +125,13 @@ async def debug():
     """Debug endpoint to check if credentials are loaded"""
     client_id = settings.google_client_id
     client_secret = settings.google_client_secret
+    github_id = settings.github_client_id
+    github_secret = settings.github_client_secret
     return {
         "google_client_id": client_id,
         "google_client_secret": client_secret[:10] + "***" if client_secret else None,
+        "github_client_id": github_id,
+        "github_client_secret": github_secret[:10] + "***" if github_secret else None,
         "redirect_uri_template": "Will be generated at login"
     }
 
@@ -114,6 +152,18 @@ async def login(request: Request):
         f"&redirect_uri={redirect_uri}&scope=openid%20email%20profile"
     )
     logger.info("Redirecting to Google OAuth")
+    return RedirectResponse(url=auth_url)
+
+
+@router.get("/login/github", response_description="Redirects to GitHub OAuth")
+async def github_login(request: Request):
+    client_id, _ = get_github_oauth_config()
+    redirect_uri = str(request.url_for("github_auth"))
+    auth_url = (
+        f"{GITHUB_AUTH_URL}?client_id={client_id}"
+        f"&redirect_uri={redirect_uri}&scope=read:user%20user:email"
+    )
+    logger.info("Redirecting to GitHub OAuth")
     return RedirectResponse(url=auth_url)
     
 
@@ -191,6 +241,69 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
 
     except Exception as e:
         logger.error(f"Error processing Google auth callback: {e}")
+        return RedirectResponse(url=settings.frontend_login_failure_uri)
+
+
+@router.get("/github/auth", name="github_auth", response_description="Redirects to Frontend with JWT")
+async def github_auth(request: Request, db: Session = Depends(get_db)):
+    try:
+        client_id, client_secret = get_github_oauth_config()
+        code = request.query_params.get("code")
+        if not code:
+            raise ValueError("No authorization code provided")
+
+        async with AsyncClient() as client:
+            token_response = await client.post(
+                GITHUB_TOKEN_URL,
+                data={
+                    "code": code,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": str(request.url_for("github_auth")),
+                },
+                headers={"Accept": "application/json"},
+            )
+            token_data = token_response.json()
+            if "error" in token_data:
+                raise ValueError(f"GitHub OAuth error: {token_data['error']}")
+            access_token = token_data.get("access_token")
+            if not access_token:
+                raise ValueError("No access token returned from GitHub")
+
+        profile = await fetch_github_profile(access_token)
+        email = profile.get("email")
+        if not email:
+            login = profile.get("login") or "user"
+            email = f"{login}@users.noreply.github.com"
+
+        user = db.query(AuthUser).filter(AuthUser.email == email).first()
+        if not user:
+            logger.debug("User not found, creating one")
+            user = AuthUser(
+                email=email,
+                name=profile.get("name"),
+                avatar_url=profile.get("avatar_url"),
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            logger.debug("User found, updating details")
+            user.name = profile.get("name")
+            user.avatar_url = profile.get("avatar_url")
+            db.commit()
+
+        jwt_token = create_access_token(
+            data={"sub": str(user.id), "name": user.name,
+                  "email": user.email, "avatar_url": user.avatar_url},
+            expires_delta=timedelta(days=1)
+        )
+        frontend_url = settings.frontend_login_success_uri
+        logger.info(f"Redirecting to frontend with token for {user.email}")
+        return RedirectResponse(url=f"{frontend_url}?token={jwt_token}")
+
+    except Exception as e:
+        logger.error(f"Error processing GitHub auth callback: {e}")
         return RedirectResponse(url=settings.frontend_login_failure_uri)
 
 

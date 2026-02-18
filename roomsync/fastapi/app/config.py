@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
     google_discovery_url: Optional[str] = None
+    github_client_id: Optional[str] = None
+    github_client_secret: Optional[str] = None
     frontend_login_success_uri: str = "http://localhost:8080/login-success"  # Default
     frontend_login_failure_uri: str = "http://localhost:8080/login-failed"  # Default
 
@@ -128,6 +130,8 @@ try:
     logging.info(f"Database URL: {settings.database_url}")
     logging.info(f"Google Client ID: {settings.google_client_id}")
     logging.info(f"Google Client Secret: {settings.google_client_secret[:10] if settings.google_client_secret else 'NOT SET'}...")
+    logging.info(f"GitHub Client ID: {settings.github_client_id}")
+    logging.info(f"GitHub Client Secret: {settings.github_client_secret[:10] if settings.github_client_secret else 'NOT SET'}...")
 except Exception as e:
     logging.error(f"Error loading settings: {e}")
     raise
