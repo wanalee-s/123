@@ -24,6 +24,18 @@ axios.interceptors.request.use(
   }
 );
 
+// Login with Email/Password (returns JWT in response, but we will store it in cookie)
+export const loginWithEmail = async (email, password) => {
+  const response = await fetch('/api/auth/register/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `username=${email}&password=${password}`
+  });
+  const data = await response.json();
+  localStorage.setItem('token', data.access_token);
+  return data;
+};
+
 // Login with Google OAuth
 export async function loginWithGoogle() {
   window.location.href = `${API_URL}/login`;

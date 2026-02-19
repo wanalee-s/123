@@ -6,20 +6,25 @@ import secrets
 from urllib import request
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.schemas.auth import UserResponse, Message
+from app.schemas.auth import UserResponse, Message, UserRegister, UserLogin, Token
 
 from app.models.authuser import AuthUser
 from app.config import settings
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from httpx import AsyncClient
+from passlib.context import CryptContext
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
 
 router = APIRouter()
+
+# Password hashing context  
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT Configuration
 SECRET_KEY = settings.jwt_secret_key
@@ -135,6 +140,32 @@ async def debug():
         "redirect_uri_template": "Will be generated at login"
     }
 
+@router.post("/register", response_model=UserResponse)
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    """Register a new user with email and password"""
+    if db.query(AuthUser).filter(AuthUser.email == user_data.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_pwd = pwd_context.hash(user_data.password)
+    user = AuthUser(
+        email=user_data.email,
+        name=user_data.name,
+        password_hash=hashed_pwd
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.post("/register/email", response_model=Token)
+async def login_email(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Login with email/password"""
+    user = db.query(AuthUser).filter(AuthUser.email == form_data.username).first()
+    if not user or not pwd_context.verify(form_data.password, user.password_hash or ""):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    token = create_access_token(data={"sub": str(user.id), "email": user.email})
+    return {"access_token": token, "token_type": "bearer"}
 
 @router.get("/login", response_description="Redirects to Google OAuth")
 async def login(request: Request):
