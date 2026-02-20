@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db import Base, engine
 from app.routers import auth, phonebook
+from app.routers.profiles import router as profiles_router
+from app.routers.rooms import router as rooms_router
+from app.routers.equipments import router as equipments_router
+from app.routers.room_equipments import router as room_equipments_router
+from app.routers.bookings import router as bookings_router
+from app.routers.damage_reports import router as damage_reports_router
 from app.env_detector import should_auto_create_tables
 import logging
 import os
@@ -96,6 +102,14 @@ auth.register_routes(auth_router)
 fastapi_app.include_router(auth_router, prefix=api_prefix, tags=["Auth"])
 fastapi_app.include_router(
     phonebook.router, prefix=f"{api_prefix}/lab10", tags=["Phonebook"])
+
+# Include new routers
+fastapi_app.include_router(profiles_router, prefix=f"{api_prefix}/api/v1")
+fastapi_app.include_router(rooms_router, prefix=f"{api_prefix}/api/v1")
+fastapi_app.include_router(equipments_router, prefix=f"{api_prefix}/api/v1")
+fastapi_app.include_router(room_equipments_router, prefix=f"{api_prefix}/api/v1")
+fastapi_app.include_router(bookings_router, prefix=f"{api_prefix}/api/v1")
+fastapi_app.include_router(damage_reports_router, prefix=f"{api_prefix}/api/v1")
 
 
 @fastapi_app.exception_handler(JWTError)

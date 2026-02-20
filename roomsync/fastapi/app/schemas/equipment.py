@@ -42,7 +42,7 @@ class RoomWithQuantity(BaseModel):
 # EXTENDED RESPONSE - อุปกรณ์พร้อมรายการห้องที่มี
 # ════════════════════════════════════════════════════════════════════════════
 class EquipmentWithRooms(EquipmentResponse):
-    rooms: List[RoomWithQuantity] = []
+    rooms: list[RoomWithQuantity] = []
     total_quantity: int = 0
 
 

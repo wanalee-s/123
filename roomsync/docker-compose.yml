@@ -8,6 +8,9 @@ services:
       - ./fastapi:/fastapi_app
     env_file:
       - .env
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       db:
         condition: service_started

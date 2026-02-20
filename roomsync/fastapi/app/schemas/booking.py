@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -27,7 +27,7 @@ class BookingBase(BaseModel):
     @model_validator(mode='after')
     def validate_booking_duration(self):
         """ตรวจสอบระยะเวลาการจอง"""
-        if self.start_time and self.end_time:
+        if hasattr(self, 'start_time') and hasattr(self, 'end_time') and self.start_time and self.end_time:
             duration = (self.end_time - self.start_time).total_seconds() / 3600
             
             # ต้องจองอย่างน้อย 30 นาที

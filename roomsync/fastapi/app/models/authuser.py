@@ -11,7 +11,6 @@ from .contact import Contact
 
 logger = logging.getLogger(__name__)
 
-
 class AuthUser(Base, SerializerMixin):
     __tablename__ = "auth_users"
     id = Column(Integer, primary_key=True)

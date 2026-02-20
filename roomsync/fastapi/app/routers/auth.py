@@ -132,6 +132,7 @@ async def debug():
     client_secret = settings.google_client_secret
     github_id = settings.github_client_id
     github_secret = settings.github_client_secret
+    
     return {
         "google_client_id": client_id,
         "google_client_secret": client_secret[:10] + "***" if client_secret else None,
