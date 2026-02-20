@@ -40,6 +40,7 @@ export const loginWithEmail = async (email, password) => {
 export async function loginWithGoogle() {
   window.location.href = `${API_URL}/login`;
 }
+// Login with GitHub OAuth
 export async function loginWithGithub() {
   window.location.href = `${API_URL}/login/github`;
 }
