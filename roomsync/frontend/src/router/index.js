@@ -24,19 +24,29 @@ const routes = [
     children: [
       {
         path: '',
-        name: 'firstpage',
-        component: () => import('../views/Firstpage.vue'),
+        name: 'Signin',
+        component: () => import('../views/Signin.vue'),
       },
     ],
   },
   {
-    path: '/login',
+    path: '/signup',
     component: AuthLayout,
     children: [
       {
         path: '',
-        name: 'Login',
-        component: () => import('../views/Login.vue'),
+        name: 'Signup',
+        component: () => import('../views/Signup.vue'),
+      }]
+  },
+  {
+    path: '/admin/Dashboard',
+    component: () => import('../views/AdminDashboardView.vue'), // สร้าง layout ใหม่สำหรับ admin
+    children: [
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: () => import('../views/AdminDashboardView.vue'),
       }]
   },
 ]

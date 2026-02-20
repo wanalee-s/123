@@ -28,6 +28,18 @@ axios.interceptors.request.use(
 export async function loginWithGoogle() {
   window.location.href = `${API_URL}/login`;
 }
+export async function loginWithGithub() {
+  window.location.href = `${API_URL}/login/github`;
+}
+export async function loginWithEmail(email, password) {
+  try {
+    const response = await axios.post(`${API_URL}/login/email`, { email, password });
+    return response.data; // Expecting { success: true } and JWT in cookie
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+}
 
 // Fetch Profile (JWT sent via cookie)
 export async function getProfile() {
