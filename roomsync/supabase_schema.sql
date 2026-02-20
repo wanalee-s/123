@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS auth_users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(100) UNIQUE NOT NULL,
     name VARCHAR(1000),
-    avatar_url VARCHAR(100)
+    avatar_url VARCHAR(100),
+    password_hash VARCHAR(255)
 );
 
 -- Create contacts table

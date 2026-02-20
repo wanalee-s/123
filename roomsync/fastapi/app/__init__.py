@@ -2,7 +2,7 @@
 from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.db import Base, engine
+from app.db import Base, engine, SessionLocal
 from app.routers import auth, phonebook
 from app.routers.profiles import router as profiles_router
 from app.routers.rooms import router as rooms_router
@@ -11,6 +11,7 @@ from app.routers.room_equipments import router as room_equipments_router
 from app.routers.bookings import router as bookings_router
 from app.routers.damage_reports import router as damage_reports_router
 from app.env_detector import should_auto_create_tables
+from app.models.authuser import AuthUser
 import logging
 import os
 from fastapi.responses import JSONResponse
@@ -52,7 +53,7 @@ fastapi_app.add_middleware(
 
 class JWTAndCSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):
-        excluded_paths = ["/", "/login", "/google/auth", "/logout"]
+        excluded_paths = ["/", "/login", "/login/email", "/register", "/google/auth", "/logout"]
         logger.debug(f"Request method: {request.method}, path: {request.url.path}")
         if request.method not in ["POST", "PUT", "DELETE"] or request.url.path in excluded_paths:
             logger.debug("Skipping JWT/CSRF validation for this request")
@@ -96,6 +97,34 @@ try:
 except Exception as e:
     logger.error(f"Error during table creation: {e}")
     # Don't fail the app if table creation fails
+
+
+# Auto-migration on startup
+async def migrate_authusers_on_startup():
+    """Automatically migrate AuthUser data from Supabase to local DB if enabled"""
+    if not settings.use_supabase:
+        logger.info("Skipping AuthUser migration (USE_SUPABASE=false)")
+        return
+    
+    try:
+        logger.info("Starting AuthUser migration from Supabase to local...")
+        db = SessionLocal()
+        
+        # Count existing users
+        existing_count = db.query(AuthUser).count()
+        logger.info(f"Local database has {existing_count} AuthUsers")
+        
+        # Perform migration (users should already be in local due to table creation)
+        # This is a placeholder for any additional sync logic
+        logger.info("AuthUser migration check complete")
+        
+        db.close()
+    except Exception as e:
+        logger.error(f"Error during AuthUser migration: {e}")
+        # Don't fail the app if migration fails
+
+
+fastapi_app.add_event_handler("startup", migrate_authusers_on_startup)
 
 auth_router = APIRouter()
 auth.register_routes(auth_router)

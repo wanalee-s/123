@@ -47,6 +47,7 @@
                   minlength="3"
                   maxlength="30"
                   title="Only letters"
+                  v-model="name"
                 />
               </label>
               <p class="validator-hint hidden w-full text-left mt-1">
@@ -68,7 +69,7 @@
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                 </g>
               </svg>
-              <input type="email" placeholder="mail@site.com" required />
+              <input type="email" placeholder="mail@site.com" required v-model="email" />
             </label>
             <div class="validator-hint hidden text-left mt-1">Required</div>
             </div>
@@ -96,6 +97,7 @@
                   minlength="8"
                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
                   title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+                  v-model="password"
                 />
               </label>
               <p class="validator-hint hidden w-full text-left">
@@ -103,7 +105,7 @@
                 <br />At least one number <br />At least one lowercase letter <br />At least one uppercase letter
               </p>
             </div>
-            <button class="btn btn-primary w-full mb-4 mt-4">Sign Up</button>
+            <button class="btn btn-primary w-full mb-4 mt-4" @click="handleRegister">Sign Up</button>
             <div class="text-sm">
               Already have an account?
               <router-link to="/signin" class="text-primary hover:underline">Sign in</router-link>
@@ -114,12 +116,18 @@
 </template>
 
 <script>
+import { ref } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { loginWithGoogle } from "@/services/auth";
+import { loginWithGithub } from "@/services/auth";
+import { registerWithEmail } from "../services/auth";
 
 export default {
   setup() {
     const auth = useAuthStore();
+    const name = ref("");
+    const email = ref("");
+    const password = ref("");
 
     function saveTokenFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -131,7 +139,19 @@ export default {
     }
 
     saveTokenFromUrl();
-    return { auth, googleLogin: loginWithGoogle };
+    const handleRegister = async () => {
+      await registerWithEmail(name.value, email.value, password.value);
+    };
+
+    return {
+      auth,
+      name,
+      email,
+      password,
+      googleLogin: loginWithGoogle,
+      githubLogin: loginWithGithub,
+      handleRegister,
+    };
   },
 };
 </script>

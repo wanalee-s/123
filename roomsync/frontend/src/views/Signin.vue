@@ -39,7 +39,7 @@
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                 </g>
               </svg>
-              <input type="email" placeholder="mail@site.com" required />
+              <input type="email" placeholder="mail@site.com" required v-model="email" />
             </label>
             <div class="validator-hint hidden text-left mt-1">Required</div>
             </div>
@@ -67,6 +67,7 @@
                   minlength="8"
                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
                   title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+                  v-model="password"
                 />
               </label>
               <p class="validator-hint hidden w-full text-left">
@@ -78,7 +79,7 @@
               <input type="checkbox" id="remember" class="mr-2" />
               <label for="remember" class="text-sm text-gray-600">Remember me</label>
             </div>
-            <button class="btn btn-primary w-full mb-4 mt-4"> Sign In</button> <!-- #TODO: ตรวจสอบการล็อกอิน เมื่อตรงกับที่มีให้ไปหาถัดไป-->
+            <button class="btn btn-primary w-full mb-4 mt-4" @click="emailLogin"> Sign In</button> <!-- #TODO: ตรวจสอบการล็อกอิน เมื่อตรงกับที่มีให้ไปหาถัดไป-->
             <div class="text-sm">
               Don't have an account?
               <router-link to="/signup" class="text-primary hover:underline">Sign up</router-link>
@@ -91,13 +92,17 @@
 </template>
 
 <script>
+import { ref } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { loginWithGoogle } from "@/services/auth";
 import { loginWithGithub } from "@/services/auth";
+import { loginWithEmail } from "../services/auth";
 
 export default {
   setup() {
     const auth = useAuthStore();
+    const email = ref("");
+    const password = ref("");
 
     function saveTokenFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -109,7 +114,19 @@ export default {
     }
 
     saveTokenFromUrl();
-    return { auth, googleLogin: loginWithGoogle, githubLogin: loginWithGithub };
+    
+    const handleEmailLogin = async () => {
+      await loginWithEmail(email.value, password.value);
+    };
+
+    return {
+      auth,
+      email,
+      password,
+      googleLogin: loginWithGoogle,
+      githubLogin: loginWithGithub,
+      emailLogin: handleEmailLogin,
+    };
   },
 };
 </script>

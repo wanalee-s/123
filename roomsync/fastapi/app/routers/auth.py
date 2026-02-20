@@ -41,6 +41,7 @@ GITHUB_USER_URL = "https://api.github.com/user"
 GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 
 
+# Check if Google OAuth credentials are set in environment variables
 def get_google_oauth_config() -> tuple[str, str]:
     client_id = settings.google_client_id
     client_secret = settings.google_client_secret
@@ -49,6 +50,7 @@ def get_google_oauth_config() -> tuple[str, str]:
     return client_id, client_secret
 
 
+# Check if GitHub OAuth credentials are set in environment variables
 def get_github_oauth_config() -> tuple[str, str]:
     client_id = settings.github_client_id
     client_secret = settings.github_client_secret
@@ -56,7 +58,7 @@ def get_github_oauth_config() -> tuple[str, str]:
         raise HTTPException(status_code=500, detail="GitHub OAuth is not configured")
     return client_id, client_secret
 
-
+# Fetch GitHub profile information using the access token
 async def fetch_github_profile(access_token: str) -> dict:
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -78,7 +80,7 @@ async def fetch_github_profile(access_token: str) -> dict:
             "login": user_data.get("login"),
         }
 
-
+# Utility function to create JWT tokens
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     csrf_token = secrets.token_hex(16)
@@ -87,7 +89,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire, "iat": datetime.utcnow()})
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
-
+# Dependency to get the current user from the JWT token
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
     logger.debug(f"Checking JWT cookie in get_current_user")
     token = request.cookies.get("jwt")
@@ -114,6 +116,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         logger.error(f"JWT decoding failed: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# Check if auth router is working
 @router.get("/", response_model=Message)
 async def hello():
     """
@@ -124,7 +127,7 @@ async def hello():
     logger.info("Auth hello endpoint accessed")
     return {"message": "From auth.py: Hello World!"}
 
-
+# route to check if credentials are loaded properly (for debugging)
 @router.get("/debug")
 async def debug():
     """Debug endpoint to check if credentials are loaded"""
@@ -141,6 +144,7 @@ async def debug():
         "redirect_uri_template": "Will be generated at login"
     }
 
+# Registration and Login Endpoints
 @router.post("/register", response_model=UserResponse)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """Register a new user with email and password"""
@@ -158,7 +162,8 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     db.refresh(user)
     return user
 
-@router.post("/register/email", response_model=Token)
+# Login with email/password
+@router.post("/login/email", response_model=Token)
 async def login_email(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login with email/password"""
     user = db.query(AuthUser).filter(AuthUser.email == form_data.username).first()
@@ -168,6 +173,7 @@ async def login_email(form_data: OAuth2PasswordRequestForm = Depends(), db: Sess
     token = create_access_token(data={"sub": str(user.id), "email": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
+# OAuth Endpoints
 @router.get("/login", response_description="Redirects to Google OAuth")
 async def login(request: Request):
     """
@@ -187,6 +193,7 @@ async def login(request: Request):
     return RedirectResponse(url=auth_url)
 
 
+# GitHub OAuth Login Endpoint
 @router.get("/login/github", response_description="Redirects to GitHub OAuth")
 async def github_login(request: Request):
     client_id, _ = get_github_oauth_config()
@@ -199,6 +206,7 @@ async def github_login(request: Request):
     return RedirectResponse(url=auth_url)
     
 
+# Google OAuth Callback Endpoint
 @router.get("/google/auth", name="google_auth", response_description="Redirects to Frontend with JWT")
 async def google_auth(request: Request, db: Session = Depends(get_db)):
     """
@@ -276,6 +284,7 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url=settings.frontend_login_failure_uri)
 
 
+# GitHub OAuth Callback Endpoint
 @router.get("/github/auth", name="github_auth", response_description="Redirects to Frontend with JWT")
 async def github_auth(request: Request, db: Session = Depends(get_db)):
     try:
@@ -339,6 +348,7 @@ async def github_auth(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url=settings.frontend_login_failure_uri)
 
 
+# Logout Endpoint
 @router.get("/logout", response_model=Message)
 async def logout():
     """
@@ -351,6 +361,7 @@ async def logout():
     return JSONResponse(content={"message": "Logout successful. Remove JWT token on frontend."})
 
 
+# Protected Endpoint to Get Current User Profile
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
     """
@@ -362,7 +373,7 @@ async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
     logger.info(f"Fetching profile for {current_user.email}")
     return {"email": current_user.email, "name": current_user.name, "avatar_url": current_user.avatar_url}
 
-
+# Utility function to register routes in the main app
 def register_routes(router_instance: APIRouter):
     router_instance.include_router(router)
 
