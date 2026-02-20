@@ -11,23 +11,25 @@ from .contact import Contact
 
 logger = logging.getLogger(__name__)
 
-
 class AuthUser(Base, SerializerMixin):
     __tablename__ = "auth_users"
     id = Column(Integer, primary_key=True)
     email = Column(String(100), unique=True, nullable=False)
     name = Column(String(1000))
     avatar_url = Column(String(100))
+    password_hash = Column(String(255), nullable=True)
 
-    def __init__(self, email, name, avatar_url):
+    def __init__(self, email, name, avatar_url, password_hash=None):
         self.email = email
         self.name = name
         self.avatar_url = avatar_url
+        self.password_hash = password_hash
 
-    def update(self, email, name, avatar_url):
+    def update(self, email, name, avatar_url, password_hash=None):
         self.email = email
         self.name = name
         self.avatar_url = avatar_url
+        self.password_hash = password_hash
 
 
 class PrivateContact(Contact, SerializerMixin):

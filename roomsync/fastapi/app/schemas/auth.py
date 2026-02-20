@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 
 class UserResponse(BaseModel):
@@ -24,3 +24,12 @@ class Message(BaseModel):
     Generic message response.
     """
     message: str = Field(..., description="Informational message", example="Operation successful")
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
