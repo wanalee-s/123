@@ -2,22 +2,25 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
-import Dashboard from '../components/Dashboard.vue'
-import Calendar from '../components/Calendar.vue'
-import UserStatus from '../components/UserStatus.vue'
+import Dashboard from '@/components/Dashboard.vue'
+import Calendar from '@/components/Calendar.vue'
+import UserStatus from '@/components/UserStatus.vue'
 
 const routes = [
+  // USER AREA
   {
     path: '/user',
     component: AppLayout,
     children: [
       { path: '', name: 'Dashboard', component: Dashboard },
       { path: 'calendar', name: 'Calendar', component: Calendar },
-      { path: 'myResevation', name: 'UserStatus', component: UserStatus },
+      { path: 'myReservation', name: 'UserStatus', component: UserStatus },
     ],
   },
-  //แยกหน้า login ออกมาเป็น layout ใหม่ เพื่อเปลี่ยนแปลง navbar
+
+  // AUTH AREA
   {
     path: '/',
     component: AuthLayout,
@@ -25,7 +28,7 @@ const routes = [
       {
         path: '',
         name: 'Signin',
-        component: () => import('../views/Signin.vue'),
+        component: () => import('@/views/Signin.vue'),
       },
     ],
   },
@@ -36,18 +39,27 @@ const routes = [
       {
         path: '',
         name: 'Signup',
-        component: () => import('../views/Signup.vue'),
-      }]
+        component: () => import('@/views/Signup.vue'),
+      },
+    ],
   },
+
+  // ADMIN AREA
   {
-    path: '/admin/Dashboard',
-    component: () => import('../views/AdminDashboardView.vue'), // สร้าง layout ใหม่สำหรับ admin
+    path: '/admin',
+    component: AdminLayout,
     children: [
       {
         path: '',
         name: 'AdminDashboard',
-        component: () => import('../views/AdminDashboardView.vue'),
-      }]
+        component: () => import('@/views/admin/AdminDashboard.vue'),
+      },
+      {
+        path: 'roleApprove',
+        name: 'AdminRoleApprove',
+        component: () => import('@/views/admin/AdminRoleApprove.vue'),
+      },
+    ],
   },
 ]
 

@@ -79,7 +79,7 @@
               <input type="checkbox" id="remember" class="mr-2" />
               <label for="remember" class="text-sm text-gray-600">Remember me</label>
             </div>
-            <button class="btn btn-primary w-full mb-4 mt-4" @click="emailLogin"> Sign In</button> <!-- #TODO: ตรวจสอบการล็อกอิน เมื่อตรงกับที่มีให้ไปหาถัดไป-->
+            <button class="btn btn-primary w-full mb-4 mt-4" @click="emailLogin"> Sign In</button>
             <div class="text-sm">
               Don't have an account?
               <router-link to="/signup" class="text-primary hover:underline">Sign up</router-link>
@@ -114,7 +114,6 @@ export default {
     }
 
     saveTokenFromUrl();
-    
     const handleEmailLogin = async () => {
       await loginWithEmail(email.value, password.value);
     };
