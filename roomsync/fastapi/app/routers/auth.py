@@ -175,34 +175,49 @@ async def login_email(form_data: OAuth2PasswordRequestForm = Depends(), db: Sess
 
 # OAuth Endpoints
 @router.get("/login", response_description="Redirects to Google OAuth")
-async def login(request: Request):
+async def login(request: Request, redirect_to: str = "/dashboard"):
     """
     **Initiate Google OAuth Login**
 
     Constructs the Google OAuth URL with identifying scopes (openid, email, profile)
     and redirects the user to Google's consent page.
+    
+    Query Parameters:
+    - redirect_to: Where to redirect after successful login (default: /dashboard)
     """
     # ... implementation details ...
     client_id, _ = get_google_oauth_config()
     redirect_uri = str(request.url_for("google_auth"))
+    # Store redirect_to in state parameter (OAuth standard way)
+    state = f"redirect_to={redirect_to}"
     auth_url = (
         f"{GOOGLE_AUTH_URL}?response_type=code&client_id={client_id}"
         f"&redirect_uri={redirect_uri}&scope=openid%20email%20profile"
+        f"&state={state}"
     )
-    logger.info("Redirecting to Google OAuth")
+    logger.info(f"Redirecting to Google OAuth (redirect_to: {redirect_to})")
     return RedirectResponse(url=auth_url)
 
 
 # GitHub OAuth Login Endpoint
 @router.get("/login/github", response_description="Redirects to GitHub OAuth")
-async def github_login(request: Request):
+async def github_login(request: Request, redirect_to: str = "/dashboard"):
+    """
+    GitHub OAuth Login endpoint with dynamic redirect support
+    
+    Query Parameters:
+    - redirect_to: Where to redirect after successful login (default: /dashboard)
+    """
     client_id, _ = get_github_oauth_config()
     redirect_uri = str(request.url_for("github_auth"))
+    # Store redirect_to in state parameter (OAuth standard way)
+    state = f"redirect_to={redirect_to}"
     auth_url = (
         f"{GITHUB_AUTH_URL}?client_id={client_id}"
         f"&redirect_uri={redirect_uri}&scope=read:user%20user:email"
+        f"&state={state}"
     )
-    logger.info("Redirecting to GitHub OAuth")
+    logger.info(f"Redirecting to GitHub OAuth (redirect_to: {redirect_to})")
     return RedirectResponse(url=auth_url)
     
 
@@ -223,6 +238,12 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
     try:
         client_id, client_secret = get_google_oauth_config()
         code = request.query_params.get("code")
+        state = request.query_params.get("state", "")
+        
+        # Extract redirect_to from state parameter
+        redirect_to = "/dashboard"  # Default
+        if state and "redirect_to=" in state:
+            redirect_to = state.split("redirect_to=")[1]
     # ... rest of the function ...
         # (This is a large block, I will strictly follow replacement rules in next step, 
         # simplifying here for the thought process)
@@ -275,8 +296,10 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
                   "email": user.email, "avatar_url": user.avatar_url},
             expires_delta=timedelta(days=1)
         )
-        frontend_url = settings.frontend_login_success_uri
-        logger.info(f"Redirecting to frontend with token for {user.email}")
+        # Build frontend URL with dynamic redirect_to parameter
+        base_url = settings.frontend_login_success_uri.rsplit("/", 1)[0]
+        frontend_url = f"{base_url}{redirect_to}"
+        logger.info(f"Redirecting to {frontend_url} with token for {user.email}")
         return RedirectResponse(url=f"{frontend_url}?token={jwt_token}")
 
     except Exception as e:
@@ -290,6 +313,13 @@ async def github_auth(request: Request, db: Session = Depends(get_db)):
     try:
         client_id, client_secret = get_github_oauth_config()
         code = request.query_params.get("code")
+        state = request.query_params.get("state", "")
+        
+        # Extract redirect_to from state parameter
+        redirect_to = "/dashboard"  # Default
+        if state and "redirect_to=" in state:
+            redirect_to = state.split("redirect_to=")[1]
+        
         if not code:
             raise ValueError("No authorization code provided")
 
@@ -339,8 +369,10 @@ async def github_auth(request: Request, db: Session = Depends(get_db)):
                   "email": user.email, "avatar_url": user.avatar_url},
             expires_delta=timedelta(days=1)
         )
-        frontend_url = settings.frontend_login_success_uri
-        logger.info(f"Redirecting to frontend with token for {user.email}")
+        # Build frontend URL with dynamic redirect_to parameter
+        base_url = settings.frontend_login_success_uri.rsplit("/", 1)[0]
+        frontend_url = f"{base_url}{redirect_to}"
+        logger.info(f"Redirecting to {frontend_url} with token for {user.email}")
         return RedirectResponse(url=f"{frontend_url}?token={jwt_token}")
 
     except Exception as e:
