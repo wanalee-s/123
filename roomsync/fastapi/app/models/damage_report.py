@@ -32,3 +32,30 @@ class DamageReport(Base):
     
     room = relationship("Room", back_populates="damage_reports")
     equipment = relationship("Equipment", back_populates="damage_reports")
+
+# dummy
+# const DamageReports = [
+#     {
+#     id: dr-1,
+#     room_id: room1,
+#     equipment_id: eq-1,
+#     reporter_id: user1,
+#     description: 'Projector bulb is broken',
+#     status: 'reported'
+#     },
+#     {
+#     id: dr-2,
+#     room_id: room2,
+#     equipment_id: eq-2,
+#     reporter_id: user2,
+#     description: 'Whiteboard markers are missing',
+#     status: 'in_progress'
+#     },
+#     {
+#     id: dr-3,
+#     room_id: room3,
+#     equipment_id: eq-1,
+#     reporter_id: user3,
+#     description: 'Projector bulb is broken',
+#     status: 'resolved'
+#    }]   

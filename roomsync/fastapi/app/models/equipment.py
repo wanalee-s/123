@@ -21,3 +21,21 @@ class Equipment(Base):
     
     room_equipments = relationship("RoomEquipment", back_populates="equipment", cascade="all, delete-orphan")
     damage_reports = relationship("DamageReport", back_populates="equipment")
+
+# dummy
+# const Equipments = [
+#     {
+#     id: eq-1,
+#     name: 'Projector',
+#     description: 'Epson X1234, 4000 lumens'
+#     },
+#     {
+#     id: eq-2,
+#     name: 'Whiteboard',
+#     description: '120x90 cm, with markers'
+#     },
+#     {
+#     id: eq-3,
+#     name: 'Conference Phone',
+#     description: 'Polycom SoundStation IP 6000'
+#     }]

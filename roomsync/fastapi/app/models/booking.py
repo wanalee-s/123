@@ -107,4 +107,29 @@ class Booking(Base):
         )
 
 
-    
+# dummy 
+# const Bookings = [
+#     { 
+#     id: booking1,
+#     user_id: user1,   
+#     room_id: room1,
+#     start_time: '2024-10-01T09:00:00',
+#     end_time: '2024-10-01T11:00:00',
+#     status: 'approved'
+#     },
+#     {
+#     id: booking2,
+#     user_id: user2,
+#     room_id: room1,
+#     start_time: '2024-10-01T12:00:00',
+#     end_time: '2024-10-01T14:00:00',
+#     status: 'pending'
+#     },
+#     {
+#     id: booking3,
+#     user_id: user3,
+#     room_id: room2,
+#     start_time: '2024-10-01T10:00:00',
+#     end_time: '2024-10-01T12:00:00',
+#     status: 'rejected'
+#     }]

@@ -20,3 +20,25 @@ class RoomEquipment(Base):
     
     room = relationship("Room", back_populates="room_equipments")
     equipment = relationship("Equipment", back_populates="room_equipments")
+
+
+# dummy
+# const RoomEquipments = [
+#     {
+#     id: "re-1",
+#     room_id: "room1",
+#     equipment_id: "eq-1",
+#     quantity: 2
+#     },
+#     {
+#     id: "re-2",
+#     room_id: "room1",
+#     equipment_id: "eq-2",
+#     quantity: 1
+#     },
+#     {
+#     id: "re-3",
+#     room_id: "room2",
+#     equipment_id: "eq-1",
+#     quantity: 1
+#     }]

@@ -149,3 +149,28 @@ class Profile(Base):
             UserRole.STUDENT.value: "นักศึกษา"
         }
         return f"{self.get_full_name()} ({role_display.get(self.role, self.role)})"
+    
+
+# dummy
+# const Profiles = [
+#     {
+#     id: user1,
+#     auth_user_id: auth0|123,
+#     first_name: 'Wichayaporn',
+#     last_name: 'Srisawat',
+#     role: 'admin'
+#     },
+#     {
+#     id: user2,
+#     auth_user_id: auth0|456,
+#     first_name: 'John',
+#     last_name: 'Doe', 
+#     role: 'teacher'
+#     },
+#     {
+#     id: user3,
+#     auth_user_id: auth0|789,      
+#     first_name: 'Jane',
+#     last_name: 'Smith',
+#     role: 'student'
+#     }]    
