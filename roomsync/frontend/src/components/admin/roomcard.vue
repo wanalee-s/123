@@ -38,6 +38,9 @@ const rooms = [
         id: 1,
         name: 'CSB100',
         level: 'Level 1, East',
+        until: '4:00 PM',
+        activeTime: '2h 30m',
+        note: null,
         pax: 12,
         status: 'available',
         image: 'https://media.discordapp.net/attachments/1471409777664987177/1473289327122583553/IMG_6809.jpg?ex=699b99db&is=699a485b&hm=f3f0f85ce89d224e0340a434c934a24844f62bef6cbd51b41b2411a47fe29971&=&format=webp&width=725&height=544'
@@ -45,7 +48,10 @@ const rooms = [
     {
         id: 2,
         name: 'CSB201',
+        level: 'Level 2, West',
         until: '4:30 PM',
+        activeTime: '1h 12m',
+        note: null,
         pax: 8,
         status: 'booked',
         image: 'https://media.discordapp.net/attachments/1471409777664987177/1474281379431977030/IMG_6847.jpg?ex=699bea07&is=699a9887&hm=b0d7a697e97ffe05d8d30a1bb07b8839e4b4eecd7606213bed01b2d0a0f1c68b&=&format=webp&width=725&height=544'
@@ -53,7 +59,10 @@ const rooms = [
     {
         id: 3,
         name: 'CSB301',
-        activeTime: '1h 12m',
+        level: 'Level 3, East',
+        until: null,
+        activeTime: '3h 45m',
+        note: null,
         pax: 20,
         status: 'inuse',
         image: 'https://media.discordapp.net/attachments/1471409777664987177/1474303771977842698/IMG_6884.jpg?ex=699bfee2&is=699aad62&hm=c8d0f125b4cd3dc645793f117d3b3da99639fded12e84135149e6f78f44172f4&=&format=webp&width=725&height=544'
@@ -61,6 +70,9 @@ const rooms = [
     {
         id: 4,
         name: 'CSB307',
+        level: 'Level 3, West',
+        until: null,
+        activeTime: null,
         note: 'Under Repair',
         pax: 1,
         status: 'broken',
@@ -69,6 +81,9 @@ const rooms = [
     {
         id: 5,
         name: 'CSB308',
+        level: 'Level 3, West',
+        until: null,
+        activeTime: null,
         note: 'Under Repair',
         pax: 1,
         status: 'broken',
