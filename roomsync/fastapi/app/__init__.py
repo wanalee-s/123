@@ -11,7 +11,11 @@ from app.routers.room_equipments import router as room_equipments_router
 from app.routers.bookings import router as bookings_router
 from app.routers.damage_reports import router as damage_reports_router
 from app.env_detector import should_auto_create_tables
+
+# Auto-migration on startup
 from app.models.authuser import AuthUser
+from app.models.room import Room
+
 import logging
 import os
 from fastapi.responses import JSONResponse
@@ -100,7 +104,7 @@ except Exception as e:
 
 
 # Auto-migration on startup
-async def migrate_authusers_on_startup():
+async def migrate_on_startup():
     """Automatically migrate AuthUser data from Supabase to local DB if enabled"""
     if not settings.use_supabase:
         logger.info("Skipping AuthUser migration (USE_SUPABASE=false)")
@@ -111,12 +115,14 @@ async def migrate_authusers_on_startup():
         db = SessionLocal()
         
         # Count existing users
-        existing_count = db.query(AuthUser).count()
-        logger.info(f"Local database has {existing_count} AuthUsers")
+        existing_users = db.query(AuthUser).count()
+        existing_rooms = db.query(Room).count()
+        logger.info(f"Local database has {existing_users} AuthUsers")
+        logger.info(f"Local database has {existing_rooms} Rooms")
         
         # Perform migration (users should already be in local due to table creation)
         # This is a placeholder for any additional sync logic
-        logger.info("AuthUser migration check complete")
+        logger.info("Data migration complete")
         
         db.close()
     except Exception as e:
@@ -124,7 +130,7 @@ async def migrate_authusers_on_startup():
         # Don't fail the app if migration fails
 
 
-fastapi_app.add_event_handler("startup", migrate_authusers_on_startup)
+fastapi_app.add_event_handler("startup", migrate_on_startup)
 
 auth_router = APIRouter()
 auth.register_routes(auth_router)

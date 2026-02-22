@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from roomsync.fastapi.app.routers import rooms
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -59,23 +60,25 @@ try:
     supabase_db = SupabaseSession()
     local_db = LocalSession()
     
-    # Get all AuthUser records from Supabase
+    # Get all Data records from Supabase
     supabase_users = supabase_db.query(AuthUser).all()
-    
+    supabase_rooms = supabase_db.query(rooms.Room).all()
+
     print(f"Found {len(supabase_users)} users in Supabase\n")
+    print(f"Found {len(supabase_rooms)} rooms in Supabase\n")
     
-    if len(supabase_users) == 0:
-        print("✅ No users to migrate")
+    if len(supabase_users) == 0 and len(supabase_rooms) == 0:
+        print("✅ No data to migrate")
         sys.exit(0)
     
     # Get existing emails in local DB
     existing_emails = set(u.email for u in local_db.query(AuthUser).all())
     
     # Copy each user (skip if already exists)
-    migrated_count = 0
+    migrated_users_count = 0
     for user in supabase_users:
         if user.email in existing_emails:
-            print(f"  ⊘ Skipped (exists): {user.email}")
+            print(f"⊘ Skipped (exists): {user.email}")
             continue
             
         try:
@@ -87,10 +90,26 @@ try:
             )
             new_user.id = user.id  # Preserve original ID
             local_db.add(new_user)
-            print(f"  ✓ Migrated: {user.email}")
-            migrated_count += 1
+            print(f"✓ Migrated: {user.email}")
+            migrated_users_count += 1
         except Exception as e:
-            print(f"  ✗ Error migrating {user.email}: {e}")
+            print(f"✗ Error migrating {user.email}: {e}")
+    
+    migrated_rooms_count = 0
+    for room in supabase_rooms:
+        try:
+            new_room = rooms.Room(
+                name=room.name,
+                description=room.description,
+                capacity=room.capacity,
+                location=room.location
+            )
+            new_room.id = room.id  # Preserve original ID
+            local_db.add(new_room)
+            print(f"✓ Migrated room: {room.name}")
+            migrated_rooms_count += 1
+        except Exception as e:
+            print(f"✗ Error migrating room {room.name}: {e}")
     
     local_db.commit()
     
@@ -98,7 +117,8 @@ try:
     local_users = local_db.query(AuthUser).all()
     print()
     print(f"✅ Migration complete!")
-    print(f"   • Migrated: {migrated_count} users")
+    print(f"   • Migrated: {migrated_users_count} users")
+    print(f"   • Migrated: {migrated_rooms_count} rooms")
     print(f"   • Total in local DB: {len(local_users)} users")
     
 finally:

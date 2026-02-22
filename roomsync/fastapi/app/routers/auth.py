@@ -31,7 +31,7 @@ SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 1 day (1440 minutes)
 
-GOOGLE_REDIRECT_URI = "http://localhost:8080/auth/google/auth"  # Adjust as needed
+GOOGLE_REDIRECT_URI = "http://localhost:8080/auth/google/auth"
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
@@ -45,17 +45,20 @@ GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 def get_google_oauth_config() -> tuple[str, str]:
     client_id = settings.google_client_id
     client_secret = settings.google_client_secret
+
     if not client_id or not client_secret:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+    
     return client_id, client_secret
-
 
 # Check if GitHub OAuth credentials are set in environment variables
 def get_github_oauth_config() -> tuple[str, str]:
     client_id = settings.github_client_id
     client_secret = settings.github_client_secret
+
     if not client_id or not client_secret:
         raise HTTPException(status_code=500, detail="GitHub OAuth is not configured")
+    
     return client_id, client_secret
 
 # Fetch GitHub profile information using the access token
@@ -64,15 +67,18 @@ async def fetch_github_profile(access_token: str) -> dict:
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/vnd.github+json",
     }
+
     async with AsyncClient() as client:
         user_response = await client.get(GITHUB_USER_URL, headers=headers)
         user_data = user_response.json()
         email = user_data.get("email")
+
         if not email:
             emails_response = await client.get(GITHUB_EMAILS_URL, headers=headers)
             emails = emails_response.json()
             primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
             email = primary.get("email") if primary else None
+
         return {
             "email": email,
             "name": user_data.get("name") or user_data.get("login"),
@@ -87,6 +93,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode["csrf_token"] = csrf_token
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
 # Dependency to get the current user from the JWT token
@@ -94,30 +101,38 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
     logger.debug(f"Checking JWT cookie in get_current_user")
     token = request.cookies.get("jwt")
     logger.debug(f"JWT cookie: {token}")
+
     if not token:
         logger.error("Missing JWT cookie in get_current_user")
         raise HTTPException(status_code=401, detail="Missing JWT cookie")
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"JWT payload: {payload}")
         user_id: str = payload.get("sub")
         logger.debug(f"Extracted user_id from sub: {user_id}")
+
         if user_id is None:
             logger.error("Invalid token: subject missing")
             raise HTTPException(
                 status_code=401, detail="Invalid token: subject missing")
+        
         user = db.query(AuthUser).filter(AuthUser.id == int(user_id)).first()
+
         if user is None:
             logger.error(f"User not found for id: {user_id}")
             raise HTTPException(status_code=401, detail="User not found")
+        
         logger.debug(f"User found: {user.email}")
+
         return user
+    
     except JWTError as e:
         logger.error(f"JWT decoding failed: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 # Check if auth router is working
-@router.get("/", response_model=Message)
+@router.get("/auth", response_model=Message)
 async def hello():
     """
     **Root Auth Endpoint**
@@ -125,10 +140,11 @@ async def hello():
     Returns a simple greeting message to verify the auth router is active.
     """
     logger.info("Auth hello endpoint accessed")
+
     return {"message": "From auth.py: Hello World!"}
 
 # route to check if credentials are loaded properly (for debugging)
-@router.get("/debug")
+@router.get("/auth/debug")
 async def debug():
     """Debug endpoint to check if credentials are loaded"""
     client_id = settings.google_client_id
@@ -157,9 +173,11 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         name=user_data.name,
         password_hash=hashed_pwd
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)
+
     return user
 
 # Login with email/password
@@ -167,10 +185,12 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 async def login_email(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login with email/password"""
     user = db.query(AuthUser).filter(AuthUser.email == form_data.username).first()
+
     if not user or not pwd_context.verify(form_data.password, user.password_hash or ""):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_access_token(data={"sub": str(user.id), "email": user.email})
+
     return {"access_token": token, "token_type": "bearer"}
 
 # OAuth Endpoints
@@ -185,9 +205,9 @@ async def login(request: Request, redirect_to: str = "/dashboard"):
     Query Parameters:
     - redirect_to: Where to redirect after successful login (default: /dashboard)
     """
-    # ... implementation details ...
     client_id, _ = get_google_oauth_config()
     redirect_uri = str(request.url_for("google_auth"))
+
     # Store redirect_to in state parameter (OAuth standard way)
     state = f"redirect_to={redirect_to}"
     auth_url = (
@@ -195,9 +215,10 @@ async def login(request: Request, redirect_to: str = "/dashboard"):
         f"&redirect_uri={redirect_uri}&scope=openid%20email%20profile"
         f"&state={state}"
     )
-    logger.info(f"Redirecting to Google OAuth (redirect_to: {redirect_to})")
-    return RedirectResponse(url=auth_url)
 
+    logger.info(f"Redirecting to Google OAuth (redirect_to: {redirect_to})")
+
+    return RedirectResponse(url=auth_url)
 
 # GitHub OAuth Login Endpoint
 @router.get("/login/github", response_description="Redirects to GitHub OAuth")
@@ -210,6 +231,7 @@ async def github_login(request: Request, redirect_to: str = "/dashboard"):
     """
     client_id, _ = get_github_oauth_config()
     redirect_uri = str(request.url_for("github_auth"))
+
     # Store redirect_to in state parameter (OAuth standard way)
     state = f"redirect_to={redirect_to}"
     auth_url = (
@@ -217,10 +239,11 @@ async def github_login(request: Request, redirect_to: str = "/dashboard"):
         f"&redirect_uri={redirect_uri}&scope=read:user%20user:email"
         f"&state={state}"
     )
+
     logger.info(f"Redirecting to GitHub OAuth (redirect_to: {redirect_to})")
+    
     return RedirectResponse(url=auth_url)
     
-
 # Google OAuth Callback Endpoint
 @router.get("/google/auth", name="google_auth", response_description="Redirects to Frontend with JWT")
 async def google_auth(request: Request, db: Session = Depends(get_db)):
@@ -234,7 +257,6 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
     4. Generates a valid JWT for the session.
     5. Redirects the user back to the frontend with the JWT query parameter.
     """
-    # ... implementation details ...
     try:
         client_id, client_secret = get_google_oauth_config()
         code = request.query_params.get("code")
@@ -273,8 +295,8 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
             user_info = user_info_response.json()
             logger.debug(f"Google profile: {user_info}")
 
-        user = db.query(AuthUser).filter(
-            AuthUser.email == user_info["email"]).first()
+        user = db.query(AuthUser).filter(AuthUser.email == user_info["email"]).first()
+
         if not user:
             logger.debug("User not found, creating one")
             user = AuthUser(
@@ -282,9 +304,11 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
                 name=user_info["name"],
                 avatar_url=user_info.get("picture")
             )
+
             db.add(user)
             db.commit()
             db.refresh(user)
+
         else:
             logger.debug("User found, updating details")
             user.name = user_info["name"]
@@ -305,7 +329,6 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error processing Google auth callback: {e}")
         return RedirectResponse(url=settings.frontend_login_failure_uri)
-
 
 # GitHub OAuth Callback Endpoint
 @router.get("/github/auth", name="github_auth", response_description="Redirects to Frontend with JWT")
@@ -379,7 +402,6 @@ async def github_auth(request: Request, db: Session = Depends(get_db)):
         logger.error(f"Error processing GitHub auth callback: {e}")
         return RedirectResponse(url=settings.frontend_login_failure_uri)
 
-
 # Logout Endpoint
 @router.get("/logout", response_model=Message)
 async def logout():
@@ -391,7 +413,6 @@ async def logout():
     """
     logger.info("User logged out")
     return JSONResponse(content={"message": "Logout successful. Remove JWT token on frontend."})
-
 
 # Protected Endpoint to Get Current User Profile
 @router.get("/me", response_model=UserResponse)

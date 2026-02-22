@@ -7,6 +7,7 @@ import sys
 import click
 from pathlib import Path
 from dotenv import load_dotenv
+from roomsync.fastapi.app.models.room import Room
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -53,14 +54,18 @@ def migrate():
         local_db = LocalSession()
         
         supabase_users = supabase_db.query(AuthUser).all()
-        click.echo(f"Found {len(supabase_users)} users\n")
+        supabase_rooms = supabase_db.query(Room).all()
         
-        if len(supabase_users) == 0:
-            click.echo("✅ No users to migrate")
+        click.echo(f"Found {len(supabase_users)} users\n")
+        click.echo(f"Found {len(supabase_rooms)} rooms\n")
+        
+        if len(supabase_users) == 0 and len(supabase_rooms) == 0:
+            click.echo("✅ No data to migrate")
             return
         
         existing_emails = set(u.email for u in local_db.query(AuthUser).all())
-        migrated_count = 0
+        migrated_users_count = 0
+        migrated_rooms_count = 0
         
         for user in supabase_users:
             if user.email in existing_emails:
@@ -76,13 +81,31 @@ def migrate():
             new_user.id = user.id
             local_db.add(new_user)
             click.echo(f"  ✓ Migrated: {user.email}")
-            migrated_count += 1
+            migrated_users_count += 1
+        
+        for room in supabase_rooms:
+            try:
+                new_room = Room(
+                    name=room.name,
+                    description=room.description,
+                    capacity=room.capacity,
+                    location=room.location
+                )
+                new_room.id = room.id
+                local_db.add(new_room)
+                click.echo(f"  ✓ Migrated room: {room.name}")
+                migrated_rooms_count += 1
+            except Exception as e:
+                click.echo(f"  ✗ Error migrating room {room.name}: {e}")
         
         local_db.commit()
         
         local_users = local_db.query(AuthUser).all()
+        local_rooms = local_db.query(Room).all()
         click.echo()
-        click.echo(f"✅ Complete! Migrated {migrated_count}, Total: {len(local_users)}")
+        
+        click.echo(f"✅ Complete! Migrated {migrated_users_count} users, Total: {len(local_users)}")
+        click.echo(f"✅ Complete! Migrated {migrated_rooms_count} rooms, Total: {len(local_rooms)}")
         
     except Exception as e:
         click.echo(f"❌ Error: {e}", err=True)
