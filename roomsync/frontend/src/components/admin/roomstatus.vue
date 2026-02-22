@@ -1,7 +1,7 @@
 <template>
     <!-- Room Status Overview-->
-        <div class="grid grid-cols-4 gap-6 mt-10">
-            <div class="col-span-3">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-10">
+            <div class="flex-1">
                 <h1 class="text-3xl font-bold">Room Status Overview</h1>
                 <div class="flex flex-wrap gap-6">
                     <div
@@ -16,7 +16,7 @@
                         </div>
                 </div>
             </div>
-            <div class="col-span-1 flex justify-end items-center">
+            <div class="w-full lg:w-auto">
                 <button class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Register New Item

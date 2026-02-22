@@ -59,6 +59,11 @@ const routes = [
         name: 'AdminRoleApprove',
         component: () => import('@/views/admin/AdminRoleApprove.vue'),
       },
+      {
+        path: 'roomManage',
+        name: 'AdminRoomManage',
+        component: () => import('@/views/admin/AdminRoomManage.vue'),
+      }
     ],
   },
 ]

@@ -34,7 +34,7 @@ onMounted(async () => {
 
         <!-- Menu -->
         <li><a href="/admin/">Dashboard</a></li>
-        <li><a href="#">Room Management</a></li>
+        <li><a href="/admin/roomManage">Room Management</a></li>
         <li><a href="#">Booking Management</a></li> <!--รวม Approve ห้อง-->
         <li><a href="/admin/roleApprove">Role Management</a></li>
         <li><a href="#">Settings</a></li>

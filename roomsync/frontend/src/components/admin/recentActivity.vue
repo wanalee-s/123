@@ -2,7 +2,31 @@
     <div class="card body bg-white shadow-md mt-10">
         <div class="card-body p-6">
             <div class="w-full">
-                <h2 class="text-3xl font-bold mb-4 ">Recent Reservation Activity</h2>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"> <!-- อยุ่คนละฝั่ง-->
+                    <h2 class="text-3xl font-bold mb-4">Recent Reservation Activity</h2>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button class="p-3 rounded-2xl border border-base-300
+                                    bg-base-100
+                                    shadow-sm hover:shadow-md
+                                    hover:-translate-y-0.5
+                                    transition-all duration-200">Export CSV</button>
+                        <button class="p-3 rounded-2xl border border-base-300
+                                        bg-base-100
+                                        shadow-sm hover:shadow-md
+                                        hover:-translate-y-0.5
+                                        transition-all duration-200">
+                            <!-- icon filter -->
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 6h18M6 12h12M10 18h4" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="table w-full">
                         <thead>

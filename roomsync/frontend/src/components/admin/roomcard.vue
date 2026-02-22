@@ -4,7 +4,8 @@
             <div
             v-for="room in rooms"
             :key="room.id"
-            class="card w-72 shrink-0 bg-base-100 shadow-lg border p-4"
+            class="card w-72 shrink-0 bg-base-100 shadow-xl border p-4 transition-all duration-300
+            hover:-translate-y-1 hover:shadow-xl"
             :class="statusConfig[room.status].border"
             >
             <figure>

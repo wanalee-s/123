@@ -2,8 +2,8 @@
     <AdminLayout>
         <!-- <h1 class="text-3xl font-bold  mb-6 text-center">Admin Dashboard</h1> -->
         <p class="text-xl font-semibold">Welcome back,here's what's happening today.</p>
-        <div class="grid grid-cols-12 gap-6 mt-6">
-            <div class="col-span-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            <div class="lg:col-span-4">
                 <div class="card bg-base-200 shadow-md p-4">
                     <div class="card-body">
                         <div class="flex items-center justify-between">
@@ -13,7 +13,8 @@
                     </div>
                     <!--#TODO: Dynamic-->
                     <div class="flex justify-center">
-                        <div class="radial-progress text-primary text-2xl" style="--value:70; --size:12rem; --thickness: 2rem;" aria-valuenow="70" role="progressbar">70%</div>
+                        <div class="radial-progress text-primary text-2xl sm:[--size:10rem] 
+                        lg:[--size:12rem]" style="--value:70; --size:12rem; --thickness: 2rem;" aria-valuenow="70" role="progressbar">70%</div>
                     </div>
                     <div class="card-body">
                         <p class="text-center text-sm text-gray-500">Compared to last week: +5%</p>
@@ -35,12 +36,12 @@
                 </div>
             </div>
             <!--#TODO : Dynamic-->
-            <div class="col-span-8">
+            <div class="lg:col-span-8">
                 <div class="card bg-base-200 shadow-md p-4">
                     <div class="card-body">
                         <div class="flex items-center justify-between">
                             <h1 class="card-title text-2xl">Most Reserved Rooms</h1>
-                            <span class="badge badge-lg badge-success">THIS WEEKS</span>
+                            <span class="badge badge-lg badge-success">WEEKLY</span>
                         </div>
                         <div class="flex flex-col mt-4 space-y-4">
                             <!--เอาแค่ 6 อันแรก-->
@@ -130,4 +131,13 @@ const showAll = ref(false)
 const displayedRooms = computed(() => {
     return showAll.value ? mostReservedRooms.value : mostReservedRooms.value.slice(0, 6)
 })
+// const responsiveLimit = computed(() => {
+//     if (window.screenWidth <= 640) {
+//         return 4
+//     } else if (window.screenWidth <= 1024) {
+//         return 6
+//     } else {
+//         return 8
+//     }
+// })
 </script>
