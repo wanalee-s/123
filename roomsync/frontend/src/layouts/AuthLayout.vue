@@ -1,5 +1,5 @@
 <template>
-    <div class="navbar bg-base-100 shadow-sm text-content px-6">
+    <div class="navbar bg-base-300 shadow-sm text-content px-6">
         <div class="absolute left-1/2 -translate-x-1/2">
             <span class="btn btn-ghost text-xl">RoomSync</span>
         </div>

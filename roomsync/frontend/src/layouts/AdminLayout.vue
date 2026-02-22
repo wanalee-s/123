@@ -13,7 +13,7 @@ import router from '../router';
     <div class="drawer-content flex flex-col">
 
         <!-- Navbar -->
-        <div class="navbar bg-base-100 shadow-sm">
+        <div class="navbar bg-base-300 shadow-sm h-30">
             <div class="navbar-start">
             <label for="drawer">
                 <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
@@ -24,10 +24,10 @@ import router from '../router';
 
             <div class="navbar-center">
                 <div class="absolute left-0 w-full text-center pointer-events-none">
-                    <span class="text-xl font-bold">
+                    <span class="text-3xl font-bold">
                     <!-- Dynamic title based on route -->
                     <div v-if="router.currentRoute.value.name === 'AdminDashboard'">
-                        Dashboard
+                        Admin Dashboard
                     </div>
                     <div v-else-if="router.currentRoute.value.name === 'AdminRoleApprove'">
                         Role Approvals
