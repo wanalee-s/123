@@ -9,7 +9,7 @@
             :key="room.id"
             class="card w-72 shrink-0 bg-base-100 shadow-xl border p-4 transition-all duration-300
             hover:-translate-y-1 hover:shadow-xl"
-            :class="statusConfig[room.status]?.border || 'border-gray-300'"
+            :class="statusConfig[room.status ? 'active' : 'inactive']?.border || 'border-gray-300'"
             >
             <figure>
             <img
@@ -20,14 +20,11 @@
             </figure>
             <div class="card-body">
                 <h2 class="card-title">{{ room.name }}</h2>
-                <p v-if="room.status === 'available'">{{ room.level }}</p>
-                <p v-else-if="room.status === 'booked'">Until: {{ room.until }}</p>
-                <p v-else-if="room.status === 'inuse'">Active Time: {{ room.activeTime }}</p>
-                <p v-else-if="room.status === 'broken'">Note: {{ room.note }}</p>
-                <p>Pax: {{ room.pax }}</p>
+                <p>Capacity: {{ room.capacity }}</p>
+                <p>Status: {{ room.status ? 'Active' : 'Inactive' }}</p>
                 <div class="card-actions justify-end">
-                    <span class="badge" :class="statusConfig[room.status]?.badgeColor || 'bg-gray-500'">
-                        {{ statusConfig[room.status]?.badge || room.status }}
+                    <span class="badge" :class="statusConfig[room.status ? 'active' : 'inactive']?.badgeColor || 'bg-gray-500'">
+                        {{ statusConfig[room.status ? 'active' : 'inactive']?.badge || (room.status ? 'Active' : 'Inactive') }}
                     </span>
                 </div>
             </div>
@@ -136,4 +133,12 @@ const statusConfig = {
         action: 'Re-Activate'
     }
 }
+const getImage = (room) => {
+    if (room.image_path) return room.image_path;
+    try {
+        return new URL(`../assets/rooms/${room.name}.jpg`, import.meta.url).href;
+    } catch {
+        return 'https://via.placeholder.com/300x160?text=' + room.name;
+    }
+};
 </script>
