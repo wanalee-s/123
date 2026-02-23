@@ -3,9 +3,12 @@
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-10">
             <div class="flex-1">
                 <h1 class="text-3xl font-bold">Room Status Overview</h1>
+                <div v-if="error" class="alert alert-error mt-4">
+                    {{ error }}
+                </div>
                 <div class="flex flex-wrap gap-6">
                     <div
-                        v-for="status in statuses"
+                        v-for="status in statusesWithCounts"
                         :key="status.label"
                         class="flex items-center gap-2"
                     >
@@ -23,21 +26,38 @@
                 </button>
             </div>
         </div>
-        <roomcard />
+        <Roomcard />
 </template>
 <script setup>
-import { computed } from 'vue'
-import roomcard from './roomcard.vue'
-const availableRooms = 5
-const bookedRooms = 3
-const maintenanceRooms = 2
-const reservedRooms = 1
+import { computed, ref, onMounted } from 'vue'
+import api from '@/services/api.js'
+import Roomcard from './roomcard.vue'
 
-const statuses = computed(() => [
-    { label: 'Available', color: 'status-success', count: availableRooms },
-    { label: 'Booked', color: 'status-error', count: bookedRooms },
-    { label: 'In Use', color: 'status-warning', count: maintenanceRooms },
-    { label: 'Broken', color: 'status-neutral', count: reservedRooms },
-])
+const statuses = ref([])
+const error = ref(null)
 
+const statusConfig = {
+        available: { label: 'Available', color: 'status-success' },
+        booked: { label: 'Booked', color: 'status-error' },
+        inuse: { label: 'In Use', color: 'status-warning' },
+        broken: { label: 'Broken', color: 'status-neutral' }
+}
+
+onMounted(async () => {
+    try {
+        const response = await api.get('/api/v1/rooms/status')
+        statuses.value = response.data
+    } catch (err) {
+        error.value = `Failed to fetch data: ${err.response?.data?.detail || err.message}`
+        console.error('API Error:', err)
+    }
+})
+
+const statusesWithCounts = computed(() => {
+        return Object.entries(statusConfig).map(([key, cfg]) => ({
+                label: cfg.label,
+                color: cfg.color,
+        count: statuses.value[key] || 0
+        }))
+})
 </script>

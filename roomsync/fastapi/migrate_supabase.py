@@ -4,10 +4,12 @@ Migrate AuthUser records from Supabase to local database
 Can be run manually or triggered via CLI
 Usage: python migrate_authusers.py
 """
+from asyncio.log import logger
 import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from roomsync.fastapi.app import db
 from roomsync.fastapi.app.routers import rooms
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -65,8 +67,8 @@ try:
     supabase_users = supabase_db.query(AuthUser).all()
     supabase_rooms = supabase_db.query(Room).all()
 
-    print(f"Found {len(supabase_users)} users in Supabase\n")
-    print(f"Found {len(supabase_rooms)} rooms in Supabase\n")
+    logger.info(f"Found {len(supabase_users)} users in Supabase")
+    logger.info(f"Found {len(supabase_rooms)} rooms in Supabase")
     
     if len(supabase_users) == 0 and len(supabase_rooms) == 0:
         print("✅ No data to migrate")
@@ -96,8 +98,16 @@ try:
         except Exception as e:
             print(f"✗ Error migrating {user.email}: {e}")
     
+    existing_room_names = set(r.name for r in local_db.query(Room).all())
     migrated_rooms_count = 0
     for room in supabase_rooms:
+
+        existing_room_statuses = db.query(Room).filter(Room.name == room.name).first().status
+
+        if room.name in existing_room_names and existing_room_statuses == room.status:
+            print(f"⊘ Skipped (exists): {room.name}")
+            continue
+
         try:
             new_room = Room(
                 name=room.name,
@@ -126,11 +136,11 @@ try:
     local_users = local_db.query(AuthUser).all()
     local_rooms = local_db.query(Room).all()
     print()
-    print(f"✅ Migration complete!")
-    print(f"   • Migrated: {migrated_users_count} users")
-    print(f"   • Migrated: {migrated_rooms_count} rooms")
-    print(f"   • Total in local DB: {len(local_users)} users")
-    print(f"   • Total in local DB: {len(local_rooms)} rooms")
+    logger.info(f"✅ Migration complete!")
+    logger.info(f"   • Migrated: {migrated_users_count} users")
+    logger.info(f"   • Migrated: {migrated_rooms_count} rooms")
+    logger.info(f"   • Total in local DB: {len(local_users)} users")
+    logger.info(f"   • Total in local DB: {len(local_rooms)} rooms")
     
 finally:
     supabase_db.close()

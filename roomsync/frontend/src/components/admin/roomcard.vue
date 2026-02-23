@@ -102,7 +102,7 @@ const error = ref(null);
 
 onMounted(async () => {
   try {
-    const response = await api.get('api/v1/rooms');
+    const response = await api.get('/api/v1/rooms');
     console.log('API Response:', response.data);
     rooms.value = response.data;
   } catch (err) {

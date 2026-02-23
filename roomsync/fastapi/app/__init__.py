@@ -3,7 +3,7 @@ from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db import Base, engine, SessionLocal
-from app.routers import auth, phonebook
+from app.routers import auth
 from app.routers.profiles import router as profiles_router
 from app.routers.rooms import router as rooms_router
 from app.routers.equipments import router as equipments_router
@@ -135,8 +135,6 @@ fastapi_app.add_event_handler("startup", migrate_on_startup)
 auth_router = APIRouter()
 auth.register_routes(auth_router)
 fastapi_app.include_router(auth_router, prefix=api_prefix, tags=["Auth"])
-fastapi_app.include_router(
-    phonebook.router, prefix=f"{api_prefix}/lab10", tags=["Phonebook"])
 
 # Include new routers
 fastapi_app.include_router(profiles_router, prefix=f"{api_prefix}/api/v1")

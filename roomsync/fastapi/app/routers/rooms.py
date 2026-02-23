@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -20,6 +21,8 @@ def get_all_rooms(
     skip: int = 0,       # ข้ามกี่ record (pagination)
     limit: int = 100,    # เอากี่ record
     status: str = None,  # filter ตาม status (available, booked, inuse, broken)
+    sort_by: str = "name",
+    sort_order: str = "asc",
     db: Session = Depends(get_db) # inject database session ยืมมาใช้ก่อนน้า
 ):
     query = db.query(Room) # SELECT * FROM rooms
@@ -27,7 +30,32 @@ def get_all_rooms(
     # ถ้ามี filter status
     if status is not None:
         query = query.filter(Room.status == status) # WHERE status = ?
+    sortable_fields = {
+        "name": Room.name,
+        "level": Room.level,
+        "status": Room.status,
+        "created_at": Room.created_at,
+        "updated_at": Room.updated_at,
+    }
+    sort_column = sortable_fields.get(sort_by, Room.name)
+    sort_fn = asc if sort_order == "asc" else desc
+    query = query.order_by(sort_fn(sort_column))
     return query.offset(skip).limit(limit).all()    # OFFSET ? LIMIT ?
+
+@router.get("/status", response_model=dict)
+def get_rooms_status_overview(db: Session = Depends(get_db)):
+    
+    availableRooms = db.query(Room).filter(Room.status == 'available').count()
+    bookedRooms = db.query(Room).filter(Room.status == 'booked').count()
+    brokenRooms = db.query(Room).filter(Room.status == 'broken').count()
+    inUseRooms = db.query(Room).filter(Room.status == 'inuse').count()
+
+    return {
+        "available": availableRooms,
+        "booked": bookedRooms,
+        "broken": brokenRooms,
+        "inuse": inUseRooms
+    }
 
 #  GET - ดึงห้องตาม ID
 @router.get("/{room_id}", response_model=RoomWithEquipments)
