@@ -3,7 +3,7 @@
             Register
     </router-link>
     <div class="min-h-screen flex items-center justify-center bg-base-200">
-        <div class="card w-120 bg-base-100 shadow-xl">
+        <div class="card w-full max-w-md sm:max-w-lg bg-base-100 shadow-xl mx-4">
         <div class="card-body text-center">
             <h1 class="card-title text-3xl font-bold justify-center mt-5">Welcome back</h1>
             <p>Please log in with your Google or Github account to continue.</p>

@@ -7,7 +7,7 @@
             <v-icon name="mdi-account" class="text-2xl"></v-icon>
         </div> -->
     </div>
-    <div class="min-h-screen flex items-center justify-center bg-base-200">
+    <div class="min-h-screen flex items-center justify-center bg-base-200 px-4 sm:px-6">
         <router-view />
     </div>
 </template>

@@ -3,7 +3,7 @@
             Sign In
     </router-link>
     <div class="min-h-screen flex items-center justify-center bg-base-200">
-        <div class="card w-120 bg-base-100 shadow-xl">
+        <div class="card w-full max-w-md sm:max-w-lg bg-base-100 shadow-xl mx-4">
         <div class="card-body text-center">
             <h1 class="card-title text-3xl justify-center mt-4">Create an account</h1>
             <p>Please create an account with your Google or GitHub account to continue.</p>
@@ -24,36 +24,6 @@
               <div class="mx-4 text-gray-500">or</div>
               <div class="flex-grow h-px bg-gray-300"></div>
             </div>
-            <div class="flex flex-col w-full gap-2">
-              <label class="label">Full Name</label>
-              <label class="input validator w-full flex items-center gap-2">
-                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <g
-                    stroke-linejoin="round"
-                    stroke-linecap="round"
-                    stroke-width="2.5"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </g>
-                </svg>
-                <input
-                  type="text"
-                  required
-                  placeholder="Full Name"
-                  pattern="[A-Za-z][A-Za-z0-9\-]*"
-                  minlength="3"
-                  maxlength="30"
-                  title="Only letters"
-                  v-model="name"
-                />
-              </label>
-              <p class="validator-hint hidden w-full text-left mt-1">
-                Must be 3 to 30 characters containing only letters
-              </p>
-            </div>
             <div class="flex flex-col w-full gap-1">
               <label class="label">Email</label>
               <label class="input validator w-full flex items-center gap-2" for="email">
@@ -71,41 +41,11 @@
               </svg>
               <input type="email" placeholder="mail@site.com" required v-model="email" />
             </label>
-            <div class="validator-hint hidden text-left mt-1">Required</div>
+            <div v-if="error" class="text-error text-sm text-left mt-1">
+              {{ error }}
             </div>
-            <div class="flex flex-col w-full gap-2">
-              <label class="label">Password</label>
-              <label class="input validator w-full flex items-center gap-2" for="password">
-                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <g
-                    stroke-linejoin="round"
-                    stroke-linecap="round"
-                    stroke-width="2.5"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
-                    ></path>
-                    <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
-                  </g>
-                </svg>
-                <input
-                  type="password"
-                  required
-                  placeholder="Password"
-                  minlength="8"
-                  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                  title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
-                  v-model="password"
-                />
-              </label>
-              <p class="validator-hint hidden w-full text-left">
-                Must be more than 8 characters, including
-                <br />At least one number <br />At least one lowercase letter <br />At least one uppercase letter
-              </p>
             </div>
-            <button class="btn btn-primary w-full mb-4 mt-4" @click="handleRegister">Sign Up</button>
+            <button class="btn btn-primary w-full mb-4 mt-4" @click="goNext">Continue</button>
             <div class="text-sm">
               Already have an account?
               <router-link to="/signin" class="text-primary hover:underline">Sign in</router-link>
@@ -114,44 +54,32 @@
         </div>
     </div>
 </template>
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-<script>
-import { ref } from "vue";
-import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle } from "@/services/auth";
-import { loginWithGithub } from "@/services/auth";
-import { registerWithEmail } from "../services/auth";
+const router = useRouter()
+const email = ref('')
+const error = ref('')
 
-export default {
-  setup() {
-    const auth = useAuthStore();
-    const name = ref("");
-    const email = ref("");
-    const password = ref("");
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(email)
+}
 
-    function saveTokenFromUrl() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
-      if (token) {
-        auth.login(token);
-        window.history.replaceState({}, document.title, "/");
-      }
-    }
+const goNext = () => {
+  if (!email.value) {
+    error.value = 'กรุณาใส่อีเมลของคุณ'
+    return
+  }
 
-    saveTokenFromUrl();
-    const handleRegister = async () => {
-      await registerWithEmail(name.value, email.value, password.value);
-    };
+  if (!validateEmail(email.value)) {
+    error.value = 'รูปแบบอีเมลไม่ถูกต้อง'
+    return
+  }
 
-    return {
-      auth,
-      name,
-      email,
-      password,
-      googleLogin: loginWithGoogle,
-      githubLogin: loginWithGithub,
-      handleRegister,
-    };
-  },
-};
+  // ถ้าผ่าน validation
+  error.value = ''
+  router.push('/signup/form')
+}
 </script>

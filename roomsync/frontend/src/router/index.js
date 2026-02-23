@@ -43,6 +43,17 @@ const routes = [
       },
     ],
   },
+  {
+    path: '/signup/form',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'SignupForm',
+        component: () => import('@/views/formsignup.vue'),
+      },
+    ],
+  },
 
   // ADMIN AREA
   {
