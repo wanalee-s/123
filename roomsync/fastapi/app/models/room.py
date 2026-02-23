@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, Boolean, DateTime, Text, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -16,10 +16,10 @@ class Room(Base):
     # ROOM INFO
     name = Column(Text, nullable=False)
     pax = Column(Integer, default=1)
-    level = Column(Text, nullable=False)
+    level = Column(Integer, nullable=False)
     status = Column(Text, nullable=False)
     note = Column(Text, nullable=True)
-    image_path = Column(str(255), nullable=True)
+    image_path = Column(String(255), nullable=True)
     
     # TIMESTAMPS ROOM
     until = Column(DateTime(timezone=True))

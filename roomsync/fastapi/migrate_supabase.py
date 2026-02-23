@@ -16,6 +16,7 @@ from sqlalchemy.orm import sessionmaker
 sys.path.insert(0, str(Path(__file__).parent))
 
 from app.models.authuser import AuthUser
+from app.models.room import Room
 from app.db import Base
 
 # Load environment
@@ -62,7 +63,7 @@ try:
     
     # Get all Data records from Supabase
     supabase_users = supabase_db.query(AuthUser).all()
-    supabase_rooms = supabase_db.query(rooms.Room).all()
+    supabase_rooms = supabase_db.query(Room).all()
 
     print(f"Found {len(supabase_users)} users in Supabase\n")
     print(f"Found {len(supabase_rooms)} rooms in Supabase\n")
@@ -98,11 +99,19 @@ try:
     migrated_rooms_count = 0
     for room in supabase_rooms:
         try:
-            new_room = rooms.Room(
+            new_room = Room(
                 name=room.name,
-                description=room.description,
-                capacity=room.capacity,
-                location=room.location
+                pax=room.pax,
+                level=room.level,
+                status=room.status,
+                note=room.note,
+                image_path=room.image_path,
+                until=room.until,
+                activeTime=room.activeTime,
+                created_at=room.created_at,
+                updated_at=room.updated_at,
+                created_by=room.created_by,
+                updated_by=room.updated_by
             )
             new_room.id = room.id  # Preserve original ID
             local_db.add(new_room)
@@ -115,11 +124,13 @@ try:
     
     # Verify
     local_users = local_db.query(AuthUser).all()
+    local_rooms = local_db.query(Room).all()
     print()
     print(f"✅ Migration complete!")
     print(f"   • Migrated: {migrated_users_count} users")
     print(f"   • Migrated: {migrated_rooms_count} rooms")
     print(f"   • Total in local DB: {len(local_users)} users")
+    print(f"   • Total in local DB: {len(local_rooms)} rooms")
     
 finally:
     supabase_db.close()

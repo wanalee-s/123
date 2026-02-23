@@ -19,7 +19,7 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
 def get_all_rooms(
     skip: int = 0,       # ข้ามกี่ record (pagination)
     limit: int = 100,    # เอากี่ record
-    status: bool = None, # filter ตาม status
+    status: str = None,  # filter ตาม status (available, booked, inuse, broken)
     db: Session = Depends(get_db) # inject database session ยืมมาใช้ก่อนน้า
 ):
     query = db.query(Room) # SELECT * FROM rooms
