@@ -155,7 +155,7 @@ class Profile(Base):
 # const Profiles = [
 #     {
 #     id: user1,
-#     auth_user_id: auth0|123,
+#     auth_user_id: auth0|123,  329ab0ed-e543-42b4-b7b0-17e2bf8b38b3
 #     first_name: 'Wichayaporn',
 #     last_name: 'Srisawat',
 #     role: 'admin'
