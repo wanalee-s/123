@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpaceBooking – Executive Suite A</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #C0392B;
+    --brand-hover: #96281B;
+    --brand-light: #fdf3f2;
+    --accent: #C0392B;
+    --accent-pink: #E91E8C;
+    --accent-green: #1a6b4a;
+    --topbar-bg: #F5E642;
+    --sidebar-bg: #FFF9C4;
+    --surface: #f5f5e8;
+    --white: #FFFFFF;
+    --border: #e8e0c0;
+    --text-primary: #3d2b1f;
+    --text-secondary: #6b5a4e;
+    --text-muted: #9e8e84;
+    --star: #FBBF24;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f5f5e8;
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── Sidebar overlay ── */
+  .sidebar-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+  }
+  .sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 260px; z-index: 201;
+    background: var(--sidebar-bg);
+    display: flex; flex-direction: column;
+    padding: 24px 0 24px;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: 4px 0 24px rgba(0,0,0,.12);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-user {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    border: 2px solid var(--border);
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .sidebar-user-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .sidebar-user-email { font-size: 12px; color: var(--text-secondary); }
+  .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+  .sidebar-nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    color: var(--text-primary); text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .sidebar-nav a:hover { background: rgba(192,57,43,0.08); color: var(--brand); }
+  .sidebar-nav a.active { background: rgba(192,57,43,0.1); color: var(--brand); font-weight: 700; }
+  .sidebar-nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .sidebar-logout {
+    margin: 12px 24px 0;
+    background: #E91E8C; color: #fff;
+    border: none; border-radius: 10px;
+    height: 42px; width: calc(100% - 48px);
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s;
+  }
+  .sidebar-logout:hover { opacity: .85; }
+
+  /* ── Topbar ── */
+  .topbar {
+    background: #F5E642;
+    height: 58px;
+    display: flex; align-items: center;
+    padding: 0 20px 0 8px; gap: 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .hamburger {
+    width: 38px; height: 38px;
+    border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border-radius: 8px; flex-shrink: 0; margin-right: 4px;
+    transition: background .15s;
+  }
+  .hamburger:hover { background: rgba(0,0,0,.08); }
+  .hamburger svg { width: 22px; height: 22px; color: var(--text-primary); }
+  .logo {
+    display: flex; align-items: center; gap: 9px;
+    text-decoration: none; color: var(--text-primary);
+    font-weight: 700; font-size: 16px;
+    flex-shrink: 0;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: #1a6b4a; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 800;
+  }
+  .topbar-title {
+    flex: 1; text-align: center;
+    font-size: 17px; font-weight: 700; color: var(--text-primary);
+  }
+  .topbar-spacer { flex: 1; }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 20px;
+    padding: 0 14px; height: 34px;
+    flex: 0 0 200px;
+    transition: border-color .15s, background .15s;
+  }
+  .search-box:focus-within { border-color: var(--brand); background: #fff; }
+  .search-box svg { width: 14px; height: 14px; color: var(--text-muted); flex-shrink: 0; }
+  .search-box input {
+    border: none; background: transparent; font-family: inherit;
+    font-size: 13px; color: var(--text-primary); flex: 1; outline: none; width: 100%;
+  }
+  .search-box input::placeholder { color: var(--text-muted); }
+  .topbar-icons { display: flex; align-items: center; gap: 4px; margin-left: 10px; }
+  .topbar-icon-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .15s; position: relative;
+  }
+  .topbar-icon-btn:hover { background: rgba(0,0,0,.08); }
+  .topbar-icon-btn svg { width: 20px; height: 20px; color: var(--text-primary); }
+  .notif-badge {
+    position: absolute; top: 5px; right: 5px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #E91E8C; border: 1.5px solid #F5E642;
+  }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    border: 2px solid rgba(0,0,0,.12);
+    margin-left: 4px; cursor: pointer; flex-shrink: 0;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  /* ── Page ── */
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 24px 48px;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .breadcrumb svg { width: 13px; height: 13px; }
+  .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--brand); }
+  .breadcrumb .active { color: var(--brand); font-weight: 500; }
+
+  /* ── Two-column layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Gallery ── */
+  .gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 180px 140px;
+    gap: 8px;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .gallery-main {
+    grid-row: 1 / 3;
+    position: relative; overflow: hidden;
+  }
+  .gallery-main img, .gallery-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform .3s;
+  }
+  .gallery-main:hover img, .gallery-thumb:hover img { transform: scale(1.04); }
+  .gallery-thumb { overflow: hidden; position: relative; }
+  .gallery-thumb:last-child::after {
+    content: '+5 more';
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Room header ── */
+  .room-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .room-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .room-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 9px; background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .icon-btn:hover { background: var(--brand-light); border-color: var(--brand); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn.liked svg { color: #ef4444; fill: #ef4444; }
+
+  .room-meta {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 22px;
+  }
+  .room-meta span { display: flex; align-items: center; gap: 5px; }
+  .room-meta svg { width: 14px; height: 14px; }
+
+  /* Section title */
+  .section-title {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  /* Amenities grid */
+  .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 0;
+    margin-bottom: 28px;
+  }
+  .amenity {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-primary);
+  }
+  .amenity svg { width: 16px; height: 16px; color: var(--brand); flex-shrink: 0; }
+
+  /* Time slots */
+  .slots-section { margin-bottom: 8px; }
+  .slots-wrap {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .slot {
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    border-radius: 9px;
+    padding: 10px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text-primary);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .slot:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+  .slot.selected { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .slot.disabled { background: #F9FAFB; color: var(--text-muted); border-color: var(--border); cursor: not-allowed; }
+
+  /* ── Right panel ── */
+  .right-panel {
+    position: sticky;
+    top: 74px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* Calendar card */
+  .cal-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .cal-title { font-size: 15px; font-weight: 700; }
+  .cal-nav { display: flex; gap: 2px; }
+  .cal-nav-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .15s;
+  }
+  .cal-nav-btn:hover { background: var(--brand-light); border-color: var(--brand); }
+  .cal-nav-btn svg { width: 14px; height: 14px; }
+  .cal-month {
+    text-align: center;
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 10px; font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    padding: 4px 0;
+  }
+  .cal-day {
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 12px; font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+    color: var(--text-primary);
+    position: relative;
+  }
+  .cal-day:hover { background: var(--brand-light); color: var(--brand); }
+  .cal-day.other-month { color: var(--text-muted); }
+  .cal-day.today { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+  .cal-day.selected { background: var(--brand); color: #fff; font-weight: 700; }
+  .cal-day.selected:hover { background: var(--brand-hover); }
+  .cal-day.range { background: #dbeafe; color: var(--brand); }
+
+  /* Reservation details card */
+  .res-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .res-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .res-title { font-size: 15px; font-weight: 700; }
+  .rating {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .rating .star { color: var(--star); font-size: 14px; }
+  .res-rows { display: flex; flex-direction: column; gap: 0; }
+  .res-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .res-row:last-child { border-bottom: none; }
+  .res-label { font-size: 13px; color: var(--text-secondary); }
+  .res-value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .confirm-btn {
+    width: 100%;
+    background: #E91E8C; color: #fff;
+    border: none; border-radius: 10px;
+    height: 44px;
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background .15s, transform .1s;
+    margin-top: 16px;
+    letter-spacing: -0.2px;
+  }
+  .confirm-btn:hover { background: #c21577; transform: scale(1.01); }
+  .confirm-btn:active { transform: scale(.99); }
+  .free-note {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-muted);
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .free-note svg { width: 14px; height: 14px; color: var(--brand); }
+
+  /* ── Footer ── */
+  .footer {
+    background: #FFF9C4;
+    border-top: 1px solid var(--border);
+    padding: 18px 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 40px;
+  }
+  .footer-brand { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+  .footer-brand .logo-icon { width: 24px; height: 24px; font-size: 10px; border-radius: 6px; }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--text-secondary); text-decoration: none; }
+  .footer-links a:hover { color: var(--brand); }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .layout { animation: fadeUp .4s ease both; }
+  .cal-card { animation: fadeUp .35s ease .05s both; }
+  .res-card { animation: fadeUp .35s ease .12s both; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-user">
+    <div class="sidebar-avatar">🧑</div>
+    <div>
+      <div class="sidebar-user-name">Admin Name</div>
+      <div class="sidebar-user-email">admin@roomsync.com</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="#" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Room Management
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Booking Management
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Role Management
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Settings
+    </a>
+  </nav>
+  <button class="sidebar-logout">Logout</button>
+</div>
+
+<!-- Topbar -->
+<header class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <a href="#" class="logo">
+    <div class="logo-icon">RS</div>
+    RoomSync
+  </a>
+  <div class="topbar-title">Room Detail</div>
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search rooms or Booking">
+  </div>
+  <div class="topbar-icons">
+    <button class="topbar-icon-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="notif-badge"></div>
+    </button>
+    <div class="user-avatar">🧑</div>
+  </div>
+</header>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="#">Home</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <a href="#">Conference Rooms</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <span class="active">Executive Suite A</span>
+  </div>
+
+  <div class="layout">
+
+    <!-- Left column -->
+    <div class="left-col">
+
+      <!-- Gallery -->
+      <div class="gallery">
+        <div class="gallery-main">
+          <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=700&q=80" alt="Executive Suite A main">
+        </div>
+        <div class="gallery-thumb">
+          <img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400&q=80" alt="Equipment">
+        </div>
+        <div class="gallery-thumb">
+          <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80" alt="Chairs">
+        </div>
+      </div>
+
+      <!-- Room title & meta -->
+      <div class="room-header">
+        <h1 class="room-title">Executive Suite A</h1>
+        <div class="room-actions">
+          <button class="icon-btn liked" title="Save">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </button>
+          <button class="icon-btn" title="Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="room-meta">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Floor 4, East Wing
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Capacity: 12 People
+        </span>
+      </div>
+
+      <!-- Amenities -->
+      <div class="section-title">Room Features &amp; Amenities</div>
+      <div class="amenities-grid">
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+          1Gbps Fiber Wi-Fi
+        </div>
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          75" 4K LED Display
+        </div>
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Polycom Studio Kit
+        </div>
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="3" x2="7" y2="13"/><path d="M7 13l-2 4 4-2z"/><line x1="15" y1="5" x2="19" y2="9"/></svg>
+          Glass Whiteboard
+        </div>
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          Climate Control
+        </div>
+        <div class="amenity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          Refreshment Station
+        </div>
+      </div>
+
+      <!-- Time Slots -->
+      <div class="slots-section">
+        <div class="section-title">Available Time Slots</div>
+        <div class="slots-wrap" id="slotsWrap">
+          <button class="slot" data-time="10:00">10:00</button>
+          <button class="slot" data-time="11:00">11:00</button>
+          <button class="slot" data-time="12:00">12:00</button>
+          <button class="slot selected" data-time="13:00">13:00</button>
+          <button class="slot selected" data-time="14:00">14:00</button>
+          <button class="slot" data-time="15:00">15:00</button>
+          <button class="slot" data-time="16:00">16:00</button>
+          <button class="slot" data-time="17:00">17:00</button>
+          <button class="slot disabled" data-time="18:00">18:00</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="right-panel">
+
+      <!-- Calendar -->
+      <div class="cal-card">
+        <div class="cal-header">
+          <span class="cal-title">Select Date</span>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="prevMonth">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="cal-nav-btn" id="nextMonth">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="cal-month" id="calMonth">October 2023</div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- Reservation Details -->
+      <div class="res-card">
+        <div class="res-header">
+          <span class="res-title">Reservation Details</span>
+          <div class="rating">
+            <span class="star">★</span>
+            <span>4.9 (24 reviews)</span>
+          </div>
+        </div>
+        <div class="res-rows">
+          <div class="res-row">
+            <span class="res-label">Selected Date</span>
+            <span class="res-value" id="resDate">Oct 24, 2023</span>
+          </div>
+          <div class="res-row">
+            <span class="res-label">Time Window</span>
+            <span class="res-value" id="resTime">13:00 – 15:00</span>
+          </div>
+          <div class="res-row">
+            <span class="res-label">Duration</span>
+            <span class="res-value" id="resDuration">2 Hours</span>
+          </div>
+        </div>
+        <button class="confirm-btn">Confirm Reservation</button>
+        <div class="free-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Free usage for internal members
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-brand">
+    <div class="logo-icon">RS</div>
+    © 2023 RoomSync Internal
+  </div>
+  <div class="footer-links">
+    <a href="#">Usage Policy</a>
+    <a href="#">Terms</a>
+    <a href="#">Help Center</a>
+    <a href="#">Contact Facility Manager</a>
+  </div>
+</footer>
+
+<script>
+  // ── Calendar ──
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dows = ['SU','MO','TU','WE','TH','FR','SA'];
+  let curYear = 2023, curMonth = 9; // 0-indexed, Oct = 9
+  let selectedDay = 24;
+  let rangeStart = 22; // "today" highlight
+
+  function renderCal() {
+    document.getElementById('calMonth').textContent = `${months[curMonth]} ${curYear}`;
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    // day-of-week headers
+    dows.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow'; el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(curYear, curMonth, 1).getDay();
+    const daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
+    const prevDays = new Date(curYear, curMonth, 0).getDate();
+
+    // prev month fill
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const el = document.createElement('div');
+      el.className = 'cal-day other-month';
+      el.textContent = prevDays - i;
+      grid.appendChild(el);
+    }
+
+    // current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const el = document.createElement('div');
+      let cls = 'cal-day';
+      if (d === rangeStart) cls += ' today';
+      if (d === selectedDay) cls += ' selected';
+      if (d > rangeStart && d < selectedDay) cls += ' range';
+      el.className = cls;
+      el.textContent = d;
+      el.addEventListener('click', () => {
+        selectedDay = d;
+        updateResDate();
+        renderCal();
+      });
+      grid.appendChild(el);
+    }
+
+    // next month fill
+    const total = firstDay + daysInMonth;
+    const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let d = 1; d <= remaining; d++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day other-month'; el.textContent = d;
+      grid.appendChild(el);
+    }
+  }
+
+  function updateResDate() {
+    const monthAbbr = months[curMonth].slice(0,3);
+    document.getElementById('resDate').textContent = `${monthAbbr} ${selectedDay}, ${curYear}`;
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    curMonth--; if (curMonth < 0) { curMonth = 11; curYear--; }
+    renderCal();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    curMonth++; if (curMonth > 11) { curMonth = 0; curYear++; }
+    renderCal();
+  });
+
+  renderCal();
+
+  // ── Time slots ──
+  const slots = document.querySelectorAll('.slot:not(.disabled)');
+  slots.forEach(slot => {
+    slot.addEventListener('click', () => {
+      slot.classList.toggle('selected');
+      updateTimeWindow();
+    });
+  });
+
+  function updateTimeWindow() {
+    const selected = [...document.querySelectorAll('.slot.selected')].map(s => s.dataset.time).sort();
+    if (selected.length === 0) {
+      document.getElementById('resTime').textContent = '—';
+      document.getElementById('resDuration').textContent = '0 Hours';
+    } else {
+      const start = selected[0];
+      const endH = parseInt(selected[selected.length - 1]) + 1;
+      const end = `${endH}:00`;
+      document.getElementById('resTime').textContent = `${start} – ${end}`;
+      document.getElementById('resDuration').textContent = `${selected.length} Hour${selected.length > 1 ? 's' : ''}`;
+    }
+  }
+
+  // ── Sidebar toggle ──
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
+  }
+
+  hamburgerBtn.addEventListener('click', openSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+  document.querySelector('.sidebar-logout').addEventListener('click', closeSidebar);
+
+  document.querySelector('.icon-btn.liked').addEventListener('click', function() {
+    this.classList.toggle('liked');
+  });
+</script>
+</body>
+</html>

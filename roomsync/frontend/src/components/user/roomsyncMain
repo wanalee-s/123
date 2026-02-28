@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomSync – Available Rooms</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #F7F0A0;
+  --card-bg:  #FFFFFF;
+  --pink:     #F03E8E;
+  --pink-h:   #d4317a;
+  --dark:     #3D2B1F;
+  --sec:      #7A6552;
+  --muted:    #B0997E;
+  --border:   rgba(61,43,31,.13);
+  --green:    #16a34a;
+  --amber:    #d97706;
+  --red:      #dc2626;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ══════════════════════════════
+   TOPBAR
+══════════════════════════════ */
+.topbar {
+  background: var(--bg);
+  height: 54px; display: flex; align-items: center;
+  padding: 0 24px; gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+}
+.hamburger {
+  width: 36px; height: 36px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 5px;
+  cursor: pointer; flex-shrink: 0; border-radius: 8px; transition: background .15s;
+}
+.hamburger:hover { background: rgba(61,43,31,.08); }
+.hamburger span { display: block; width: 20px; height: 2px; background: var(--dark); border-radius: 2px; }
+.topbar-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 16px; font-weight: 800; color: var(--dark); pointer-events: none;
+}
+.topbar-spacer { flex: 1; }
+.topbar-search {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.55); border: 1px solid var(--border);
+  border-radius: 20px; padding: 0 14px; height: 34px; flex: 0 0 220px;
+}
+.topbar-search svg { width: 14px; height: 14px; color: var(--muted); }
+.topbar-search input {
+  border: none; background: transparent; font-family: inherit;
+  font-size: 13px; color: var(--dark); flex: 1; outline: none;
+}
+.topbar-search input::placeholder { color: var(--muted); }
+.notif-wrap { position: relative; cursor: pointer; }
+.notif-wrap svg { width: 22px; height: 22px; color: var(--dark); display: block; }
+.notif-badge {
+  position: absolute; top: -3px; right: -4px;
+  width: 10px; height: 10px; background: var(--pink);
+  border-radius: 50%; border: 2px solid var(--bg);
+}
+.topbar-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg,#86efac,#4ade80);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; border: 2px solid rgba(255,255,255,.7);
+}
+
+/* ══════════════════════════════
+   SIDEBAR
+══════════════════════════════ */
+.sidebar-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.25);
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.sidebar-overlay.open { opacity: 1; pointer-events: all; }
+.sidebar {
+  position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+  background: #FEFCE8; z-index: 201; display: flex; flex-direction: column;
+  transform: translateX(-100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+  box-shadow: 4px 0 24px rgba(0,0,0,.12);
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar-profile {
+  display: flex; align-items: center; gap: 12px;
+  padding: 24px 20px 20px; border-bottom: 1px solid var(--border);
+}
+.sidebar-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg,#86efac,#4ade80);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sidebar-uname  { font-size: 14px; font-weight: 800; color: var(--dark); }
+.sidebar-uemail { font-size: 11px; color: var(--sec); margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-nav a {
+  display: block; padding: 10px 14px; border-radius: 10px;
+  font-size: 14px; font-weight: 500; color: var(--dark);
+  text-decoration: none; transition: background .15s, color .15s;
+}
+.sidebar-nav a:hover  { background: rgba(240,62,142,.1); color: var(--pink); }
+.sidebar-nav a.active { background: rgba(240,62,142,.14); color: var(--pink); font-weight: 700; }
+.sidebar-footer { padding: 16px 20px 28px; }
+.logout-btn {
+  width: 100%; background: var(--pink); color: #fff; border: none;
+  border-radius: 50px; height: 44px; font-family: inherit; font-size: 14px;
+  font-weight: 700; cursor: pointer; transition: background .15s;
+}
+.logout-btn:hover { background: var(--pink-h); }
+
+/* ══════════════════════════════
+   PAGE LAYOUT
+══════════════════════════════ */
+.page {
+  flex: 1;
+  padding: 22px 28px 48px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* Sub-search bar */
+.sub-search-row { display: flex; justify-content: center; }
+.sub-search {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.65); border: 1px solid var(--border);
+  border-radius: 30px; padding: 0 20px; height: 44px; width: 420px; max-width: 100%;
+  transition: box-shadow .2s;
+}
+.sub-search:focus-within { box-shadow: 0 0 0 3px rgba(240,62,142,.18); border-color: var(--pink); }
+.sub-search svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.sub-search input {
+  border: none; background: transparent; font-family: inherit;
+  font-size: 14px; color: var(--dark); flex: 1; outline: none;
+}
+.sub-search input::placeholder { color: var(--muted); }
+.heart-btn { cursor: pointer; color: var(--pink); display: flex; }
+.heart-btn svg { width: 18px; height: 18px; }
+
+/* Section header */
+.section-header { display: flex; align-items: center; justify-content: space-between; }
+.section-title  { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+.filter-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.7); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 16px;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--dark);
+  cursor: pointer; transition: border-color .15s;
+}
+.filter-btn:hover { border-color: var(--pink); color: var(--pink); }
+.filter-btn svg { width: 15px; height: 15px; }
+
+/* Two-column: grid + filter panel */
+.layout { display: grid; grid-template-columns: 1fr 252px; gap: 20px; align-items: start; }
+
+/* ══════════════════════════════
+   ROOM CARDS
+══════════════════════════════ */
+.rooms-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+
+.room-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: transform .2s, box-shadow .2s;
+  animation: fadeUp .35s ease both;
+}
+.room-card:nth-child(1){animation-delay:.04s}
+.room-card:nth-child(2){animation-delay:.08s}
+.room-card:nth-child(3){animation-delay:.12s}
+.room-card:nth-child(4){animation-delay:.17s}
+.room-card:nth-child(5){animation-delay:.22s}
+.room-card:nth-child(6){animation-delay:.27s}
+.room-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(61,43,31,.1); }
+
+.card-img { position: relative; height: 140px; overflow: hidden; flex-shrink: 0; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.room-card:hover .card-img img { transform: scale(1.04); }
+
+/* Status badge */
+.status-badge {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+  border-radius: 8px; padding: 4px 9px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap;
+}
+.sdot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sdot-g { background: #22c55e; animation: blink 1.5s infinite; }
+.sdot-a { background: #f59e0b; }
+.sdot-r { background: #ef4444; }
+.t-green  { color: #15803d; }
+.t-amber  { color: #92400e; }
+.t-red    { color: #dc2626; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+
+/* Card body */
+.card-body {
+  padding: 13px 14px 14px;
+  flex: 1; display: flex; flex-direction: column; gap: 7px;
+}
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.room-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+.cap {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600; color: var(--sec); white-space: nowrap; flex-shrink: 0;
+}
+.cap svg { width: 12px; height: 12px; }
+.room-loc { font-size: 11px; color: var(--sec); }
+.divider { height: 1px; background: var(--border); }
+.amenities { display: flex; gap: 10px; flex-wrap: wrap; }
+.amen {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; color: var(--sec); letter-spacing: 0.3px;
+}
+.amen svg { width: 13px; height: 13px; color: var(--pink); }
+
+/* Card footer */
+.card-footer {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-top: auto; padding-top: 4px;
+}
+.next-slot .lbl { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.next-slot .val { font-size: 12px; font-weight: 700; color: var(--dark); margin-top: 1px; }
+
+.reserve-btn {
+  background: var(--pink); color: #fff; border: none;
+  border-radius: 9px; padding: 8px 12px;
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: background .15s, transform .1s;
+  text-align: center; line-height: 1.35;
+}
+.reserve-btn:hover { background: var(--pink-h); transform: scale(1.02); }
+.no-slot-btn {
+  background: #F1F5F9; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 9px;
+  padding: 8px 12px; font-family: inherit; font-size: 11px;
+  font-weight: 500; cursor: not-allowed;
+}
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 18px; }
+.pg {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1px solid var(--border); background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--dark); transition: all .12s;
+}
+.pg:hover { border-color: var(--pink); color: var(--pink); background: rgba(240,62,142,.08); }
+.pg.active { background: var(--pink); color: #fff; border-color: var(--pink); }
+.pg svg { width: 14px; height: 14px; }
+
+/* ══════════════════════════════
+   FILTER PANEL
+══════════════════════════════ */
+.filter-panel {
+  background: rgba(255,255,255,.72); border: 1px solid var(--border);
+  border-radius: 16px; padding: 18px;
+  position: sticky; top: 68px;
+  backdrop-filter: blur(8px);
+}
+.fp-title { font-size: 15px; font-weight: 800; margin-bottom: 16px; }
+.fp-sec { margin-bottom: 16px; }
+.fp-label {
+  font-size: 10px; font-weight: 800; color: var(--sec);
+  letter-spacing: 0.9px; text-transform: uppercase; margin-bottom: 10px;
+}
+
+/* Checkbox rows */
+.cb-row { display: flex; align-items: center; gap: 9px; cursor: pointer; margin-bottom: 8px; }
+.cb-row:last-child { margin-bottom: 0; }
+.cb {
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 1.5px solid var(--border); background: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all .15s;
+}
+.cb.on { background: var(--pink); border-color: var(--pink); }
+.cb svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3; display: none; }
+.cb.on svg { display: block; }
+.cb-label { font-size: 13px; color: var(--dark); }
+
+/* Tag group */
+.tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.fp-tag {
+  padding: 5px 11px; border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s;
+  border: 1.5px solid transparent;
+}
+.fp-tag.on  { background: var(--pink); color: #fff; border-color: var(--pink); }
+.fp-tag.off { background: rgba(255,255,255,.8); color: var(--sec); border-color: var(--border); }
+.fp-tag:hover { border-color: var(--pink); }
+
+/* Slider */
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-track { flex: 1; height: 4px; background: var(--border); border-radius: 4px; position: relative; }
+.slider-fill { position: absolute; left: 0; height: 100%; background: var(--pink); border-radius: 4px; width: 25%; }
+.slider-thumb {
+  position: absolute; top: 50%; left: 25%; transform: translate(-50%,-50%);
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--pink); border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(240,62,142,.4); cursor: pointer;
+}
+.slider-val { font-size: 12px; font-weight: 800; color: var(--pink); white-space: nowrap; }
+
+.fp-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+.avail-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px; background: rgba(240,62,142,.08);
+  border: 1px solid rgba(240,62,142,.2); border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  color: var(--dark); cursor: pointer; transition: all .15s;
+}
+.avail-btn:hover { border-color: var(--pink); color: var(--pink); background: rgba(240,62,142,.14); }
+.avail-btn svg { width: 15px; height: 15px; }
+
+/* ══════════════════════════════
+   FOOTER
+══════════════════════════════ */
+.footer {
+  background: rgba(247,240,160,.8); border-top: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-brand { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); font-weight: 600; }
+.footer-icon-box {
+  width: 22px; height: 22px; background: var(--pink); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 9px; font-weight: 800;
+}
+.footer-links { display: flex; gap: 22px; }
+.footer-links a { font-size: 12px; color: var(--sec); text-decoration: none; }
+.footer-links a:hover { color: var(--pink); }
+.footer-actions { display: flex; gap: 8px; }
+.footer-action-btn {
+  width: 28px; height: 28px; border: 1px solid var(--border);
+  border-radius: 7px; background: rgba(255,255,255,.5);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.footer-action-btn:hover { border-color: var(--pink); }
+.footer-action-btn svg { width: 14px; height: 14px; color: var(--sec); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-profile">
+    <div class="sidebar-avatar">🧑</div>
+    <div>
+      <div class="sidebar-uname">Alex Rivera</div>
+      <div class="sidebar-uemail">alex@roomsync.com</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="active">Find Rooms</a>
+    <a href="#">My Reservations</a>
+    <a href="#">Internal Resources</a>
+    <a href="#">Settings</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn">Sign Out</button>
+  </div>
+</aside>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="hamburger" id="hamburgerBtn"><span></span><span></span><span></span></div>
+  <div class="topbar-title">RoomSync</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search rooms or Booking">
+  </div>
+  <div class="notif-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <div class="notif-badge"></div>
+  </div>
+  <div class="topbar-avatar">🧑</div>
+</header>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- Sub search -->
+  <div class="sub-search-row">
+    <div class="sub-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search for a study room or floor…">
+      <div class="heart-btn" id="heartBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section title + Filter button -->
+  <div class="section-header">
+    <h1 class="section-title">Available Rooms</h1>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      Filter
+    </button>
+  </div>
+
+  <!-- Grid + Filter Panel -->
+  <div class="layout">
+
+    <!-- Left: Room grid + pagination -->
+    <div>
+      <div class="rooms-grid">
+
+        <!-- Card 1 — Available -->
+        <div class="room-card">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-g"></span><span class="t-green">AVAILABLE NOW</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">The Glass Suite</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>10 Max</div>
+            </div>
+            <div class="room-loc">Level 1 • Wing B</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>DISPLAY</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next Available</div><div class="val">Immediately</div></div>
+              <button class="reserve-btn">Reserve<br>Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 — Available -->
+        <div class="room-card">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-g"></span><span class="t-green">AVAILABLE NOW</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">Zen Den</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>4 Max</div>
+            </div>
+            <div class="room-loc">Level 2 • Quiet Zone</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9.5V4a1 1 0 011-1h18a1 1 0 011 1v5.5"/><line x1="2" y1="12" x2="22" y2="12"/></svg>CLIMATE</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next Available</div><div class="val">Immediately</div></div>
+              <button class="reserve-btn">Reserve<br>Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 — Reserved -->
+        <div class="room-card">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1431540015161-0bf868a2d407?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-a"></span><span class="t-amber">RESERVED UNTIL 11:30 AM</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">Main Boardroom</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>20 Max</div>
+            </div>
+            <div class="room-loc">Ground Floor • Lobby</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>85" DISPLAY</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next</div><div class="val">11:30 AM Today</div></div>
+              <button class="reserve-btn">Reserve<br>Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 — Available -->
+        <div class="room-card">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1564069114553-7215e1ff1890?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-g"></span><span class="t-green">AVAILABLE NOW</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">Focus Pod 04</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>2 Max</div>
+            </div>
+            <div class="room-loc">Level 1 • Wing A</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next Available</div><div class="val">Immediately</div></div>
+              <button class="reserve-btn">Reserve<br>Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 — Available -->
+        <div class="room-card">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-g"></span><span class="t-green">AVAILABLE NOW</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">The Social Lab</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>16 Max</div>
+            </div>
+            <div class="room-loc">Level 1 • Commons</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>VIDEO CONF.</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next Available</div><div class="val">Immediately</div></div>
+              <button class="reserve-btn">Reserve<br>Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6 — Fully Booked -->
+        <div class="room-card" style="opacity:.75">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1497366412874-3415097a27e7?w=600&q=80" alt="">
+            <div class="status-badge"><span class="sdot sdot-r"></span><span class="t-red">FULLY BOOKED TODAY</span></div>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="room-name">Studio X</div>
+              <div class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>5 Max</div>
+            </div>
+            <div class="room-loc">Level 3 • Creative</div>
+            <div class="divider"></div>
+            <div class="amenities">
+              <div class="amen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>WI-FI</div>
+            </div>
+            <div class="card-footer">
+              <div class="next-slot"><div class="lbl">Next Available</div><div class="val">Tomorrow</div></div>
+              <button class="no-slot-btn">No Slots</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /rooms-grid -->
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <button class="pg" id="pg-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="pg active">1</button>
+        <button class="pg">2</button>
+        <button class="pg">3</button>
+        <button class="pg" id="pg-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- Right: Filter Panel -->
+    <div class="filter-panel">
+      <div class="fp-title">Quick Filters</div>
+
+      <!-- Floor Level -->
+      <div class="fp-sec">
+        <div class="fp-label">Floor Level</div>
+        <div class="cb-row" onclick="toggleCb(this)">
+          <div class="cb on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="cb-label">Ground Floor</span>
+        </div>
+        <div class="cb-row" onclick="toggleCb(this)">
+          <div class="cb on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="cb-label">Level 1 – Creative</span>
+        </div>
+        <div class="cb-row" onclick="toggleCb(this)">
+          <div class="cb"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="cb-label">Level 2 – Quiet</span>
+        </div>
+      </div>
+
+      <!-- Amenities -->
+      <div class="fp-sec">
+        <div class="fp-label">Amenities</div>
+        <div class="tag-group">
+          <button class="fp-tag on"  onclick="toggleTag(this)">Wi-Fi</button>
+          <button class="fp-tag on"  onclick="toggleTag(this)">Display</button>
+          <button class="fp-tag off" onclick="toggleTag(this)">Whiteboard</button>
+          <button class="fp-tag off" onclick="toggleTag(this)">VideoConf.</button>
+        </div>
+      </div>
+
+      <!-- Min Capacity -->
+      <div class="fp-sec">
+        <div class="fp-label">Min. Capacity</div>
+        <div class="slider-row">
+          <div class="slider-track" id="sliderTrack">
+            <div class="slider-fill" id="sliderFill"></div>
+            <div class="slider-thumb" id="sliderThumb"></div>
+          </div>
+          <span class="slider-val" id="sliderVal">4+</span>
+        </div>
+      </div>
+
+      <div class="fp-divider"></div>
+
+      <!-- Availability View -->
+      <button class="avail-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Availability View
+      </button>
+    </div>
+
+  </div><!-- /layout -->
+</div><!-- /page -->
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-brand">
+    <div class="footer-icon-box">RS</div>
+    RoomSync © 2024
+  </div>
+  <div class="footer-links">
+    <a href="#">Usage Guidelines</a>
+    <a href="#">Floor Map</a>
+    <a href="#">Help Desk</a>
+  </div>
+  <div class="footer-actions">
+    <div class="footer-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+    <div class="footer-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+  </div>
+</footer>
+
+<script>
+  // ── Sidebar ──────────────────────────────────────────────────────
+  const _ham = document.getElementById('hamburgerBtn');
+  const _sb  = document.getElementById('sidebar');
+  const _ov  = document.getElementById('sidebarOverlay');
+  const sbOpen  = () => { _sb.classList.add('open');  _ov.classList.add('open');  };
+  const sbClose = () => { _sb.classList.remove('open'); _ov.classList.remove('open'); };
+  _ham.addEventListener('click', () => _sb.classList.contains('open') ? sbClose() : sbOpen());
+  _ov.addEventListener('click', sbClose);
+  document.querySelectorAll('#sidebar .sidebar-nav a').forEach(a => {
+    a.addEventListener('click', () => {
+      document.querySelectorAll('#sidebar .sidebar-nav a').forEach(x => x.classList.remove('active'));
+      a.classList.add('active'); sbClose();
+    });
+  });
+  document.querySelector('.logout-btn').addEventListener('click', () => { if(confirm('Sign out?')) sbClose(); });
+
+  // ── Filter helpers ───────────────────────────────────────────────
+  function toggleCb(row) { row.querySelector('.cb').classList.toggle('on'); }
+  function toggleTag(btn) {
+    const isOn = btn.classList.contains('on');
+    btn.classList.toggle('on', !isOn);
+    btn.classList.toggle('off', isOn);
+  }
+
+  // ── Slider ───────────────────────────────────────────────────────
+  const track = document.getElementById('sliderTrack');
+  const fill  = document.getElementById('sliderFill');
+  const thumb = document.getElementById('sliderThumb');
+  const valEl = document.getElementById('sliderVal');
+  let dragging = false;
+
+  function setSlider(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    fill.style.width  = pct + '%';
+    thumb.style.left  = pct + '%';
+    const cap = Math.round(pct / 100 * 20);
+    valEl.textContent = cap + '+';
+  }
+  thumb.addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const r = track.getBoundingClientRect();
+    setSlider((e.clientX - r.left) / r.width * 100);
+  });
+  window.addEventListener('mouseup', () => dragging = false);
+  setSlider(25);
+
+  // ── Pagination ───────────────────────────────────────────────────
+  document.querySelectorAll('.pg').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.id === 'pg-prev' || btn.id === 'pg-next') return;
+      document.querySelectorAll('.pg').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // ── Heart toggle ─────────────────────────────────────────────────
+  const heartBtn = document.getElementById('heartBtn');
+  let hearted = true;
+  heartBtn.addEventListener('click', () => {
+    hearted = !hearted;
+    const svg = heartBtn.querySelector('svg');
+    svg.setAttribute('fill', hearted ? 'currentColor' : 'none');
+  });
+
+  // ── Reserve button ───────────────────────────────────────────────
+  document.querySelectorAll('.reserve-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.textContent = '✓ Reserved';
+      btn.style.background = '#16a34a';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = 'Reserve\nRoom';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    });
+  });
+</script>
+</body>
+</html>

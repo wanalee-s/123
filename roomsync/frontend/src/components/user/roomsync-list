@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomSync – Available Office Spaces</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+    --bg: #F7F0A0;
+    --bg-card: #FEFCE8;
+    --brand-pink: #F03E8E;
+    --brand-pink-hover: #d4317a;
+    --brand-dark: #3D2B1F;
+    --brand: #F03E8E;
+    --brand-hover: #d4317a;
+    --brand-light: rgba(240,62,142,.1);
+    --surface: #F7F0A0;
+    --card-bg: #FFFFFF;
+    --white: #FFFFFF;
+    --border: rgba(61,43,31,.13);
+    --text-primary: #3D2B1F;
+    --text-secondary: #7A6552;
+    --text-muted: #B0997E;
+    --avail-bar: #F03E8E;
+    --avail-track: rgba(61,43,31,.1);
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --star: #FBBF24;
+    --brand-deep: #3D2B1F;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  
+
+  /* ── Wrapper ── */
+  .wrapper {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  
+  .quick-book-btn svg { width: 16px; height: 16px; }
+
+  /* ── Page body ── */
+  .page-body {
+    padding: 28px 32px;
+    flex: 1;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+  .breadcrumb svg { width: 13px; height: 13px; }
+  .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--brand-pink); }
+  .breadcrumb .current { color: var(--text-primary); font-weight: 500; }
+
+  /* Page header */
+  .page-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title-group {}
+  .page-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+  .view-toggle {
+    display: flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden;
+  }
+  .view-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: background .15s, color .15s;
+  }
+  .view-btn svg { width: 15px; height: 15px; }
+  .view-btn.inactive { background: var(--white); color: var(--text-secondary); }
+  .view-btn.inactive:hover { background: var(--surface); }
+  .view-btn.active { background: #111827; color: #fff; }
+
+  /* Filters row */
+  .filters-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .filter-pill {
+    display: flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text-primary);
+    transition: border-color .15s, background .15s;
+  }
+  .filter-pill:hover { border-color: var(--brand-pink); }
+  .filter-pill svg { width: 13px; height: 13px; color: var(--text-secondary); }
+  .filter-pill .remove { color: var(--text-muted); width: 13px; height: 13px; }
+  .filter-pill.has-value { border-color: var(--brand-pink); color: var(--brand-pink); background: var(--brand-light); }
+  .clear-filters {
+    background: none; border: none;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: var(--brand-pink); cursor: pointer; padding: 6px 4px;
+  }
+  .clear-filters:hover { text-decoration: underline; }
+
+  /* ── Table card ── */
+  .table-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .table-header {
+    display: grid;
+    grid-template-columns: 260px 140px 160px 1fr 120px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #FAFAFA;
+  }
+  .th {
+    font-size: 11px; font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.7px; text-transform: uppercase;
+  }
+  .th.right { text-align: right; }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 260px 140px 160px 1fr 120px;
+    padding: 16px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+    animation: fadeIn .35s ease both;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: #FAFBFF; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .table-row:nth-child(1) { animation-delay: .05s; }
+  .table-row:nth-child(2) { animation-delay: .10s; }
+  .table-row:nth-child(3) { animation-delay: .15s; }
+  .table-row:nth-child(4) { animation-delay: .20s; }
+
+  /* Room info cell */
+  .room-info { display: flex; align-items: center; gap: 12px; }
+  .room-thumb {
+    width: 52px; height: 48px;
+    border-radius: 9px;
+    object-fit: cover;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .room-name-col .name { font-size: 14px; font-weight: 600; }
+  .room-name-col .loc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Capacity cell */
+  .cap-cell { display: flex; align-items: center; gap: 7px; }
+  .cap-cell svg { width: 15px; height: 15px; color: var(--text-secondary); flex-shrink: 0; }
+  .cap-cell span { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+  /* Amenities cell */
+  .amenities-cell { display: flex; align-items: center; gap: 8px; }
+  .amen-icon {
+    width: 28px; height: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .amen-icon svg { width: 14px; height: 14px; color: var(--text-secondary); }
+  .amen-more {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 7px;
+  }
+
+  /* Availability cell */
+  .avail-cell { display: flex; align-items: center; gap: 10px; }
+  .avail-bar-wrap { flex: 1; height: 6px; background: var(--avail-track); border-radius: 4px; overflow: hidden; position: relative; }
+  .avail-segment {
+    position: absolute; top: 0; height: 100%;
+    background: var(--avail-bar);
+    border-radius: 4px;
+    transition: width .4s ease;
+  }
+  .avail-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .label-available { color: var(--green); }
+  .label-booked    { color: var(--red); }
+
+  /* Action cell */
+  .action-cell { display: flex; justify-content: flex-end; }
+  .book-btn {
+    background: var(--brand-pink);
+    color: #fff;
+    border: none; border-radius: 8px;
+    padding: 8px 16px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s, transform .1s;
+    white-space: nowrap;
+  }
+  .book-btn:hover { background: var(--brand-hover); transform: scale(1.02); }
+  .full-btn {
+    background: var(--white);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: not-allowed;
+  }
+
+  /* ── Pagination ── */
+  .pagination-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 0;
+  }
+  .pagination-info { font-size: 13px; color: var(--text-secondary); }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .pg-btn {
+    min-width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text-primary); padding: 0 8px;
+    transition: all .12s;
+  }
+  .pg-btn:hover { background: var(--brand-light); border-color: var(--brand-pink); color: var(--brand-pink); }
+  .pg-btn.active { background: var(--brand-pink); color: #fff; border-color: var(--brand-pink); }
+  .pg-btn.dots { cursor: default; color: var(--text-muted); border-color: transparent; background: transparent; }
+  .pg-btn.dots:hover { background: transparent; border-color: transparent; color: var(--text-muted); }
+  .pg-btn svg { width: 14px; height: 14px; }
+
+  /* ── Info Cards ── */
+  .info-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .info-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex; gap: 14px; align-items: flex-start;
+    transition: transform .2s, box-shadow .2s;
+    animation: fadeIn .5s ease both;
+  }
+  .info-card:nth-child(1) { animation-delay: .3s; }
+  .info-card:nth-child(2) { animation-delay: .38s; }
+  .info-card:nth-child(3) { animation-delay: .46s; }
+  .info-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.07); }
+  .info-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .info-icon.green  { background: #dcfce7; }
+  .info-icon.blue   { background: rgba(240,62,142,.1); }
+  .info-icon.orange { background: #fff7ed; }
+  .info-card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .info-card-body  { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ── Topbar+Sidebar (shared) ── */
+  .topbar {
+    background: var(--bg);
+    height: 56px; display: flex; align-items: center;
+    padding: 0 24px; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  .hamburger {
+    width: 36px; height: 36px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+    cursor: pointer; flex-shrink: 0; border-radius: 8px; transition: background .15s;
+  }
+  .hamburger:hover { background: rgba(61,43,31,.08); }
+  .hamburger span { display: block; width: 20px; height: 2px; background: var(--brand-dark); border-radius: 2px; }
+  .topbar-title {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-size: 16px; font-weight: 800; color: var(--brand-dark); letter-spacing: -0.3px; pointer-events: none;
+  }
+  .topbar-spacer { flex: 1; }
+  .topbar-search {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,.55); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0 14px; height: 34px; flex: 0 0 210px;
+  }
+  .topbar-search svg { width: 14px; height: 14px; color: var(--text-muted); flex-shrink: 0; }
+  .topbar-search input {
+    border: none; background: transparent; font-family: inherit;
+    font-size: 13px; color: var(--brand-dark); flex: 1; outline: none;
+  }
+  .topbar-search input::placeholder { color: var(--text-muted); }
+  .notif-wrap { position: relative; cursor: pointer; }
+  .notif-wrap svg { width: 22px; height: 22px; color: var(--brand-dark); display: block; }
+  .notif-badge {
+    position: absolute; top: -3px; right: -4px; width: 10px; height: 10px;
+    background: var(--brand-pink); border-radius: 50%; border: 2px solid var(--bg);
+  }
+  .topbar-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg,#86efac,#4ade80);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; border: 2px solid rgba(255,255,255,.7);
+  }
+  .sidebar-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.25);
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .sidebar-overlay.open { opacity: 1; pointer-events: all; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+    background: #FEFCE8; z-index: 201; display: flex; flex-direction: column;
+    transform: translateX(-100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: 4px 0 24px rgba(0,0,0,.12);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-profile {
+    display: flex; align-items: center; gap: 12px;
+    padding: 24px 20px 20px; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg,#86efac,#4ade80);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; border: 2px solid rgba(255,255,255,.8);
+  }
+  .sidebar-uname  { font-size: 14px; font-weight: 800; color: var(--brand-dark); }
+  .sidebar-uemail { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .sidebar-nav {
+    flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar-nav a {
+    display: block; padding: 10px 14px; border-radius: 10px;
+    font-size: 14px; font-weight: 500; color: var(--brand-dark);
+    text-decoration: none; transition: background .15s, color .15s;
+  }
+  .sidebar-nav a:hover  { background: rgba(240,62,142,.1); color: var(--brand-pink); }
+  .sidebar-nav a.active { background: rgba(240,62,142,.14); color: var(--brand-pink); font-weight: 700; }
+  .sidebar-footer { padding: 16px 20px 28px; }
+  .logout-btn {
+    width: 100%; background: var(--brand-pink); color: #fff; border: none;
+    border-radius: 50px; height: 44px; font-family: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .logout-btn:hover { background: var(--brand-pink-hover); }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-profile">
+    <div class="sidebar-avatar">🧑</div>
+    <div>
+      <div class="sidebar-uname">Alex Rivera</div>
+      <div class="sidebar-uemail">alex@roomsync.com</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class='active'>Find Rooms</a>
+    <a href="#" >My Reservations</a>
+    <a href="#" >Internal Resources</a>
+    <a href="#">Settings</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn">Sign Out</button>
+  </div>
+</aside>
+<header class="topbar">
+  <div class="hamburger" id="hamburgerBtn"><span></span><span></span><span></span></div>
+  <div class="topbar-title">Available Office Spaces</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search rooms or Booking">
+  </div>
+  <div class="notif-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <div class="notif-badge"></div>
+  </div>
+  <div class="topbar-avatar">🧑</div>
+</header>
+
+<!-- Page Body -->
+  <div class="page-body">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="#">Workspace</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="current">Room Search</span>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-title-group">
+        <h1 class="page-title">Available Office Spaces</h1>
+        <p class="page-subtitle">24 spaces found in <strong>London HQ</strong></p>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn inactive" id="gridBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Grid View
+        </button>
+        <button class="view-btn active" id="listBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          List View
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter pills -->
+    <div class="filters-row">
+      <button class="filter-pill">
+        Room Type
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button class="filter-pill has-value">
+        Capacity: 4–12
+        <svg class="remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <button class="filter-pill">
+        Amenities
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button class="filter-pill">
+        Floor
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button class="clear-filters">Clear all filters</button>
+    </div>
+
+    <!-- Table card -->
+    <div class="table-card">
+      <!-- Header -->
+      <div class="table-header">
+        <div class="th">Room Information</div>
+        <div class="th">Capacity</div>
+        <div class="th">Amenities</div>
+        <div class="th">Availability (Today)</div>
+        <div class="th right">Action</div>
+      </div>
+
+      <!-- Row 1: Nordic Suite -->
+      <div class="table-row">
+        <div class="room-info">
+          <div class="room-thumb" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);">🏢</div>
+          <div class="room-name-col">
+            <div class="name">Nordic Suite</div>
+            <div class="loc">Floor 4 • Wing A</div>
+          </div>
+        </div>
+        <div class="cap-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>8–10 people</span>
+        </div>
+        <div class="amenities-cell">
+          <div class="amen-icon" title="Wi-Fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+          <div class="amen-icon" title="Display"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div class="amen-icon" title="Video Conf."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+        </div>
+        <div class="avail-cell">
+          <div class="avail-bar-wrap">
+            <div class="avail-segment" style="left:0%; width:30%; background:#dbeafe;"></div>
+            <div class="avail-segment" style="left:32%; width:36%;"></div>
+          </div>
+          <span class="avail-label label-available">AVAILABLE</span>
+        </div>
+        <div class="action-cell"><button class="book-btn">Book Now</button></div>
+      </div>
+
+      <!-- Row 2: The Greenhouse -->
+      <div class="table-row">
+        <div class="room-info">
+          <div class="room-thumb" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);">🌿</div>
+          <div class="room-name-col">
+            <div class="name">The Greenhouse</div>
+            <div class="loc">Floor 2 • Main Hall</div>
+          </div>
+        </div>
+        <div class="cap-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>4–6 people</span>
+        </div>
+        <div class="amenities-cell">
+          <div class="amen-icon" title="Coffee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+          <div class="amen-icon" title="Whiteboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="3" x2="7" y2="13"/><path d="M7 13l-2 4 4-2z"/><line x1="15" y1="5" x2="19" y2="9"/></svg></div>
+        </div>
+        <div class="avail-cell">
+          <div class="avail-bar-wrap">
+            <div class="avail-segment" style="left:0%; width:100%; background:#fee2e2;"></div>
+          </div>
+          <span class="avail-label label-booked">BOOKED</span>
+        </div>
+        <div class="action-cell"><button class="full-btn">Full</button></div>
+      </div>
+
+      <!-- Row 3: Focus Pod 04 -->
+      <div class="table-row">
+        <div class="room-info">
+          <div class="room-thumb" style="background:linear-gradient(135deg,#fff7ed,#fed7aa);">🪑</div>
+          <div class="room-name-col">
+            <div class="name">Focus Pod 04</div>
+            <div class="loc">Floor 1 • Focus Zone</div>
+          </div>
+        </div>
+        <div class="cap-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>1–2 people</span>
+        </div>
+        <div class="amenities-cell">
+          <div class="amen-icon" title="Wi-Fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+          <div class="amen-icon" title="Lamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 18v4M8 22h8"/><path d="M5 3l7 9 7-9H5z"/></svg></div>
+        </div>
+        <div class="avail-cell">
+          <div class="avail-bar-wrap">
+            <div class="avail-segment" style="left:0%; width:22%;"></div>
+            <div class="avail-segment" style="left:24%; width:22%;"></div>
+          </div>
+          <span class="avail-label label-available">AVAILABLE</span>
+        </div>
+        <div class="action-cell"><button class="book-btn">Book Now</button></div>
+      </div>
+
+      <!-- Row 4: Skyline Lounge -->
+      <div class="table-row">
+        <div class="room-info">
+          <div class="room-thumb" style="background:linear-gradient(135deg,#1e293b,#334155);">🌆</div>
+          <div class="room-name-col">
+            <div class="name">Skyline Lounge</div>
+            <div class="loc">Floor 12 • Penthouse</div>
+          </div>
+        </div>
+        <div class="cap-cell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>20–25 people</span>
+        </div>
+        <div class="amenities-cell">
+          <div class="amen-icon" title="Wi-Fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+          <div class="amen-icon" title="Display"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div class="amen-icon" title="Video Conf."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <div class="amen-icon" title="Whiteboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="3" x2="7" y2="13"/><path d="M7 13l-2 4 4-2z"/><line x1="15" y1="5" x2="19" y2="9"/></svg></div>
+        </div>
+        <div class="avail-cell">
+          <div class="avail-bar-wrap">
+            <div class="avail-segment" style="left:0%; width:22%;"></div>
+            <div class="avail-segment" style="left:24%; width:22%;"></div>
+          </div>
+          <span class="avail-label label-available">AVAILABLE</span>
+        </div>
+        <div class="action-cell"><button class="book-btn">Book Now</button></div>
+      </div>
+    </div>
+
+    <!-- Pagination row -->
+    <div class="pagination-row">
+      <span class="pagination-info">Showing 1 to 4 of 24 results</span>
+      <div class="pagination">
+        <button class="pg-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="pg-btn active">1</button>
+        <button class="pg-btn">2</button>
+        <button class="pg-btn">3</button>
+        <button class="pg-btn dots">…</button>
+        <button class="pg-btn">6</button>
+        <button class="pg-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info cards -->
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-icon green">📈</div>
+        <div>
+          <div class="info-card-title">Peak Hours</div>
+          <div class="info-card-body">Most rooms on Floor 4 are booked between 10:00 AM and 2:00 PM. Plan ahead for best availability.</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon blue">🍃</div>
+        <div>
+          <div class="info-card-title">Smart Spaces</div>
+          <div class="info-card-body">All rooms on the 12th floor now feature adaptive climate control and daylight sensing lighting.</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon orange">🎧</div>
+        <div>
+          <div class="info-card-title">Concierge Support</div>
+          <div class="info-card-body">Need custom catering or setup? Contact the facility team after confirming your booking.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // View toggle
+  const gridBtn = document.getElementById('gridBtn');
+  const listBtn = document.getElementById('listBtn');
+  gridBtn.addEventListener('click', () => {
+    gridBtn.classList.add('active'); gridBtn.classList.remove('inactive');
+    listBtn.classList.add('inactive'); listBtn.classList.remove('active');
+  });
+  listBtn.addEventListener('click', () => {
+    listBtn.classList.add('active'); listBtn.classList.remove('inactive');
+    gridBtn.classList.add('inactive'); gridBtn.classList.remove('active');
+  });
+
+  // Pagination
+  document.querySelectorAll('.pg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.querySelector('svg') || btn.classList.contains('dots')) return;
+      document.querySelectorAll('.pg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Remove capacity filter pill
+  document.querySelectorAll('.filter-pill.has-value').forEach(pill => {
+    pill.querySelector('.remove')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pill.classList.remove('has-value');
+      pill.innerHTML = `Capacity <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="6 9 12 15 18 9"/></svg>`;
+    });
+  });
+
+  // ── Sidebar ──
+  const _ham = document.getElementById('hamburgerBtn');
+  const _sb  = document.getElementById('sidebar');
+  const _ov  = document.getElementById('sidebarOverlay');
+  const _open  = () => { _sb.classList.add('open');  _ov.classList.add('open');  };
+  const _close = () => { _sb.classList.remove('open'); _ov.classList.remove('open'); };
+  _ham.addEventListener('click', () => _sb.classList.contains('open') ? _close() : _open());
+  _ov.addEventListener('click', _close);
+  document.querySelectorAll('#sidebar .sidebar-nav a').forEach(a => {
+    a.addEventListener('click', () => {
+      document.querySelectorAll('#sidebar .sidebar-nav a').forEach(x => x.classList.remove('active'));
+      a.classList.add('active'); _close();
+    });
+  });
+  document.querySelector('.logout-btn').addEventListener('click', () => { if(confirm('Sign out?')) _close(); });
+</script>
+</body>
+</html>
+
